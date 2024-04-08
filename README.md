@@ -40,7 +40,7 @@ This will generate an [example_filter1.md](https://github.com/akirk/extract-hook
 > - `string` `$mode` Extra information that might be useful.
 >
 > ### Returns
-> `Return the modified text`
+> `string` Return the modified text
 
 But not only that, it will contain an auto-generated example:
 
