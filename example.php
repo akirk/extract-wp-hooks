@@ -7,7 +7,7 @@ namespace Extract_Hooks;
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @return string Return the modified text.
+ * @return string The modified text.
  */
 $result = apply_filters( 'example_filter1', $text, $mode );
 
