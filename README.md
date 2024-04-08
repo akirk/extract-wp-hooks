@@ -40,20 +40,21 @@ This will generate an `example_filter.md` that contains the text `This is an exa
 
 But not only that, it will contain an auto-generated example:
 
-```php
-add_filter(
-    'example_filter',
-    function(
-        string $text,
-        string $mode
-    ) {
-        // Your code
-        return $text;
-    },
-    10,
-    2
-);
-```
+> ```php
+> add_filter(
+>     'example_filter',
+>     function(
+>         string $text,
+>         string $mode
+>     ) {
+>         // Your code
+>         return $text;
+>     },
+>     10,
+>     2
+> );
+> ```
+
 You can also provide your own example in the comment, that will override the auto-generated example:
 
 ```php
