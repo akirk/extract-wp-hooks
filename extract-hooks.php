@@ -44,7 +44,7 @@ if ( ! file_exists( $ini_file ) ) {
 echo 'Loading ', realpath( $ini_file ), PHP_EOL;
 $ini = parse_ini_file( $ini_file );
 
-foreach ( array( 'namespace', 'base_dir', 'wiki_directory', 'github_url' ) as $key ) {
+foreach ( array( 'namespace', 'base_dir', 'wiki_directory', 'github_blob_url' ) as $key ) {
 	if ( ! isset( $ini[ $key ] ) ) {
 		echo 'Missing ini entry ', $key, '. Example: ', PHP_EOL, sample_ini(), PHP_EOL;
 		exit( 1 );
@@ -489,7 +489,7 @@ foreach ( $filters as $hook => $data ) {
 
 	$doc .= "## Files\n\n";
 	foreach ( $data['files'] as $file => $signature ) {
-		$doc .= "- [$file](" . $ini['github_url'] . str_replace( ':', '#L', $file ) . ")\n";
+		$doc .= "- [$file](" . $ini['github_blob_url'] . str_replace( ':', '#L', $file ) . ")\n";
 		$doc .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 	}
 	$doc .= "\n\n[Hooks](Hooks)\n";
