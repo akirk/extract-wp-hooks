@@ -24,7 +24,7 @@ For each filter, it looks at the comment preceeding the filter, so that you can 
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @return Return the modified text.
+ * @return string The modified text.
  */
 $result = apply_filters( 'example_filter1', $text, $mode );
 ```
@@ -40,7 +40,7 @@ This will generate an [example_filter1.md](https://github.com/akirk/extract-hook
 > - `string` `$mode` Extra information that might be useful.
 >
 > ### Returns
-> `string` Return the modified text
+> `string` The modified text
 
 But not only that, it will contain an auto-generated example:
 
@@ -76,7 +76,7 @@ You can also provide your own example in the comment, that will override the aut
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @return Return the modified text.
+ * @return string The modified text.
  */
 $result = apply_filters( 'example_filter2', $text, $mode );
 ```
