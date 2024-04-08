@@ -11,7 +11,7 @@ Typically, you'd first create a [`extract-hooks.ini`](https://github.com/akirk/e
 
 ## How it works
 
-The PHP script doesn't have any dependencies. It uses PHP's internal parser (using []`token_get_all`](https://www.php.net/manual/en/function.token-get-all.php)) to identify PHP function calls to `apply_filters()` or `do_action()`.
+The PHP script doesn't have any dependencies. It uses PHP's internal parser (using [`token_get_all`](https://www.php.net/manual/en/function.token-get-all.php)) to identify PHP function calls to `apply_filters()` or `do_action()`.
 
 It generates a markdown file for each filter which is suitable for a Github wiki. The page contains potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, references to the source code (including extracted source snippet).
 
