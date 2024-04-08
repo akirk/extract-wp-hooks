@@ -1,8 +1,8 @@
 # extract-hooks
 
-This script is intended for WordPress plugins that themselves provide hooks that can be used by other plugins and create a documentation in a Github wiki for them.
+This script is intended for WordPress plugins that provide hooks that can be used by other plugins. By parsing its source code, it creates a documentation in a Github wiki.
 
-Typically, you'd first create a [`extract-hooks.ini`](https://github.com/akirk/extract-hooks/blob/main/extract-hooks.ini), and check out the Github wiki in a folder above the repo. Modify the `extract-hooks.ini` accordingly and execute extract-hooks.php. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
+Typically, you'd first create a [`extract-hooks.ini`](https://github.com/akirk/extract-hooks/blob/main/extract-hooks.ini), and check out the Github wiki in a folder above the repo. Modify the `extract-hooks.ini` accordingly and execute `extract-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
 
 ## Examples
 - [https://github.com/akirk/extract-hooks/wiki/Hooks](https://github.com/akirk/extract-hooks/wiki/Hooks) (extracted from [example.php](https://github.com/akirk/extract-hooks/blob/main/example.php))
@@ -13,7 +13,7 @@ Typically, you'd first create a [`extract-hooks.ini`](https://github.com/akirk/e
 
 The PHP script doesn't have any dependencies. It uses PHP's internal parser (using []`token_get_all`](https://www.php.net/manual/en/function.token-get-all.php)) to identify PHP function calls to `apply_filters()` or `do_action()`.
 
-It generates a Markdown file for each filter which is suitable for a Github wiki. The page contains potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, references to the source code (including extracted source snippet).
+It generates a markdown file for each filter which is suitable for a Github wiki. The page contains potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, references to the source code (including extracted source snippet).
 
 ### Provide documentation via a Comment
 For each filter, it looks at the comment preceeding the filter, so that you can document it, for example:
