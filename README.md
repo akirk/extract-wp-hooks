@@ -31,20 +31,20 @@ $result = apply_filters( 'example_filter1', $text, $mode );
 
 This will generate an [example_filter1.md](https://github.com/akirk/extract-hooks/wiki/example_filter1) that contains the text `This is an example filter` and a list of parameters and return value:
 
-> ## example_filter1
+> # example_filter1
 >
 > This is an example filter.
 >
-> ### Parameters
+> ## Parameters
 > - `string` `$text` The text to modify.
 > - `string` `$mode` Extra information that might be useful.
 >
-> ### Returns
+> ## Returns
 > `string` The modified text.
 
 But not only that, it will contain an auto-generated example:
 
-> ### Auto-generated Example
+> ## Auto-generated Example
 > ```php
 > add_filter(
 >     'example_filter1',
@@ -82,7 +82,7 @@ $result = apply_filters( 'example_filter2', $text, $mode );
 ```
 
 It generates this output: [example_filter2](https://github.com/akirk/extract-hooks/wiki/example_filter2)
-> ### Example
+> ## Example
 > ```php
 > add_filter( 'example_filter2', function ( $text ) {
 >     return strtolower( $text );
@@ -98,7 +98,7 @@ $result = apply_filters( 'example_filter3', $text, $mode );
 ```
 
 It generates this output: [example_filter3](https://github.com/akirk/extract-hooks/wiki/example_filter3)
-> ### Auto-generated Example
+> ## Auto-generated Example
 >
 > ```php
 > add_filter(
