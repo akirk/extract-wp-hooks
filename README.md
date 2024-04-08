@@ -15,7 +15,7 @@ The PHP script doesn't have any dependencies. It uses PHP's internal parser (usi
 
 It generates a markdown file for each filter which is suitable for a Github wiki. The page contains potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, references to the source code (including extracted source snippet).
 
-### Provide documentation via a Comment
+### Example: Provide Documentation Via a Comment
 For each filter, it looks at the comment preceeding the filter, so that you can document it, for example:
 
 ```php
@@ -24,22 +24,22 @@ For each filter, it looks at the comment preceeding the filter, so that you can 
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @return Return the modified text.
+ * @returns Return the modified text.
  */
 $result = apply_filters( 'example_filter1', $text, $mode );
 ```
 
 This will generate an [example_filter1.md](https://github.com/akirk/extract-hooks/wiki/example_filter1) that contains the text `This is an example filter` and a list of parameters and return value:
 
-> ### example_filter
+> ## example_filter1
 >
 > This is an example filter.
 >
-> #### Parameters
+> ### Parameters
 > - `string` `$text` The text to modify.
 > - `string` `$mode` Extra information that might be useful.
 >
-> #### Returns
+> ### Returns
 > `Return the modified text`
 
 But not only that, it will contain an auto-generated example:
@@ -76,7 +76,7 @@ You can also provide your own example in the comment, that will override the aut
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @return Return the modified text.
+ * @returns Return the modified text.
  */
 $result = apply_filters( 'example_filter2', $text, $mode );
 ```
