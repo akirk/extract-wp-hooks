@@ -24,7 +24,7 @@ For each filter, it looks at the comment preceeding the filter, so that you can 
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @returns Return the modified text.
+ * @return Return the modified text.
  */
 $result = apply_filters( 'example_filter1', $text, $mode );
 ```
@@ -76,7 +76,7 @@ You can also provide your own example in the comment, that will override the aut
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @returns Return the modified text.
+ * @return Return the modified text.
  */
 $result = apply_filters( 'example_filter2', $text, $mode );
 ```

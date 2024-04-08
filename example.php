@@ -7,7 +7,7 @@ namespace Extract_Hooks;
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @returns Return the modified text.
+ * @return string Return the modified text.
  */
 $result = apply_filters( 'example_filter1', $text, $mode );
 
@@ -23,7 +23,7 @@ $result = apply_filters( 'example_filter1', $text, $mode );
  *
  * @param string $text The text to modify.
  * @param string $mode Extra information that might be useful.
- * @returns Return the modified text.
+ * @return string Return the modified text.
  */
 $result = apply_filters( 'example_filter2', $text, $mode );
 
