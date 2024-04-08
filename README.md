@@ -40,6 +40,7 @@ This will generate an `example_filter.md` that contains the text `This is an exa
 
 But not only that, it will contain an auto-generated example:
 
+> ### Auto-generated Example
 > ```php
 > add_filter(
 >     'example_filter',
