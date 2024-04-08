@@ -29,7 +29,6 @@ if ( isset( $_SERVER['argv'][1] ) && file_exists( $_SERVER['argv'][1] ) ) {
 		array_unshift( $dirs, dirname( $_SERVER['argv'][1] ) );
 	}
 }
-
 foreach ( $dirs as $dir ) {
 	$ini_file = $dir . '/extract-hooks.ini';
 	if ( file_exists( $ini_file ) ) {
@@ -44,7 +43,7 @@ if ( ! file_exists( $ini_file ) ) {
 echo 'Loading ', realpath( $ini_file ), PHP_EOL;
 $ini = parse_ini_file( $ini_file );
 
-foreach ( array( 'namespace', 'base_dir', 'wiki_directory', 'github_blob_url' ) as $key ) {
+foreach ( array( 'base_dir', 'wiki_directory', 'github_blob_url' ) as $key ) {
 	if ( ! isset( $ini[ $key ] ) ) {
 		echo 'Missing ini entry ', $key, '. Example: ', PHP_EOL, sample_ini(), PHP_EOL;
 		exit( 1 );
@@ -59,6 +58,9 @@ if ( empty( $ini['ignore_regex'] ) ) {
 }
 if ( empty( $ini['section'] ) ) {
 	$ini['section'] = 'file';
+}
+if ( empty( $ini['namespace'] ) ) {
+	$ini['namespace'] = '';
 }
 // if the base dir is not absolute (also on windows), prepend it with $dir.
 if ( '/' === substr( $ini['base_dir'], 0, 1 ) ) {
@@ -427,7 +429,7 @@ foreach ( $filters as $hook => $data ) {
 			$p = preg_split( '/ +/', $param, 3 );
 			if ( '\\' === substr( $p[0], 0, 1 ) ) {
 				$p[0] = substr( $p[0], 1 );
-			} elseif ( ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
+			} elseif ( $ini['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 				$p[0] = $ini['namespace'] . '\\' . $p[0];
 			}
 			if ( ! $first ) {
@@ -479,7 +481,7 @@ foreach ( $filters as $hook => $data ) {
 		$p = preg_split( '/ +/', $data['returns'], 2 );
 		if ( '\\' === substr( $p[0], 0, 1 ) ) {
 			$p[0] = substr( $p[0], 1 );
-		} elseif ( ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
+		} elseif ( $ini['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 			$p[0] = $ini['namespace'] . '\\' . $p[0];
 		}
 		$doc .= "\n`{$p[0]}` {$p[1]}";
