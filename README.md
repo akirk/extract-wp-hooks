@@ -2,7 +2,7 @@
 
 This script is intended for WordPress plugins that provide hooks that can be used by other plugins. By parsing its source code, it creates a documentation in a Github wiki.
 
-Typically, you'd first create a [`extract-hooks.ini`](https://github.com/akirk/extract-hooks/blob/main/extract-hooks.ini), and check out the Github wiki in a folder above the repo. Modify the `extract-hooks.ini` accordingly and execute `extract-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
+Typically, you'd first create a [`extract-wp-hooks.json`](https://github.com/akirk/extract-hooks/blob/main/extract-wp-hooks.json), and check out the Github wiki in a folder above the repo. Modify the `extract-wp-hooks.json` accordingly and execute `extract-wp-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
 
 ## Examples
 - [https://github.com/akirk/extract-hooks/wiki/Hooks](https://github.com/akirk/extract-hooks/wiki/Hooks) (extracted from [example.php](https://github.com/akirk/extract-hooks/blob/main/example.php))
@@ -120,3 +120,17 @@ It generates this output: [example_filter3](https://github.com/akirk/extract-hoo
 > - `$text`
 > - `$mode`
 
+## Install
+
+Via composer:
+```
+composer require akirk/extract-wp-hooks
+```
+
+You will then be able to run `extract-wp-hooks.php` from the vendor bin directory:
+
+```
+./vendor/bin/extract-wp-hooks.php
+```
+
+Place a `.extract-wp-hooks.json` or `extract-wp-hooks.json` in your project directory to use it.
