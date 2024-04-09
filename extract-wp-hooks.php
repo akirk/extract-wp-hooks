@@ -69,10 +69,10 @@ foreach ( $files as $file ) {
 	}
 	$dir = substr( $file->getPath(), $b );
 	$main_dir = strtok( $dir, '/' );
-	if ( '.' === substr( $main_dir, 0, 1 ) ) {
+	if ( '.' === substr( $main_dir, 0, 1 ) || '.' === substr( $file->getFilename(), 0, 1 ) ) {
 		continue;
 	}
-	if ( in_array( $main_dir, $config['exclude_dirs'], true ) ) {
+	if ( in_array( basename( $main_dir ), $config['exclude_dirs'], true ) ) {
 		continue;
 	}
 
