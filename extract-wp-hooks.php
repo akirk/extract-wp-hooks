@@ -38,6 +38,10 @@ foreach ( array( 'wiki_directory', 'github_blob_url' ) as $key ) {
 	}
 }
 
+if ( empty( $config['exclude_dirs'] ) ) {
+	$config['exclude_dirs'] = array();
+}
+$config['exclude_dirs'][] = 'vendor';
 if ( empty( $config['ignore_filter'] ) ) {
 	$config['ignore_filter'] = array();
 }
@@ -65,14 +69,10 @@ foreach ( $files as $file ) {
 	}
 	$dir = substr( $file->getPath(), $b );
 	$main_dir = strtok( $dir, '/' );
-	if ( in_array(
-		$main_dir,
-		array(
-			'blocks',
-			'libs',
-			'tests',
-		)
-	) ) {
+	if ( '.' === substr( $main_dir, 0, 1 ) ) {
+		continue;
+	}
+	if ( in_array( $main_dir, $config['exclude_dirs'], true ) ) {
 		continue;
 	}
 
