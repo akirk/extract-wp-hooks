@@ -1,0 +1,12 @@
+{
+    "namespace": "Extract_WP_Hooks",
+    "base_dir": ".",
+    "wiki_directory": "../extract-wp-hooks.wiki",
+    "github_blob_url": "https://github.com/akirk/extract-wp-hooks/blob/main/",
+    "hooks": {
+        "ignore_filter": [
+            "filter_name1",
+            "filter_name2"
+        ]
+    }
+}
