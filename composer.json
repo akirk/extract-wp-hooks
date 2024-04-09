@@ -1,9 +1,8 @@
 {
     "name": "akirk/extract-wp-hooks",
-    "version": "1.0.0",
     "description": "Extract available WordPress hooks for a Github Wiki",
     "type": "library",
-    "license": "GPLv2",
+    "license": "GPL-2.0-or-later",
     "authors": [
         {
             "name": "Alex Kirk"
