@@ -124,7 +124,7 @@ It generates this output: [example_filter3](https://github.com/akirk/extract-hoo
 
 Via composer:
 ```
-composer require akirk/extract-wp-hooks
+composer require --dev akirk/extract-wp-hooks
 ```
 
 You will then be able to run `extract-wp-hooks.php` from the vendor bin directory:
