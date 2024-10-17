@@ -357,10 +357,28 @@ foreach ( $filters as $hook => $data ) {
 		foreach ( $data['params'] as $i => $vars ) {
 			$param = false;
 			foreach ( $vars as $k => $var ) {
+				if ( preg_match( '/^(_[ex_]|array)\(/', $var ) ) {
+					continue;
+				}
+
 				if ( false !== strpos( $var, ' ' ) && false === strpos( $var, '\'' ) ) {
 					$param = $var;
 					$p = preg_split( '/ +/', $param, 3 );
 					$vars[ $k ] = $p[1];
+					continue;
+				}
+
+				if ( false !== strpos( $var, '(' ) ) {
+					$var = preg_replace( '/(isset)?\([^)]*\)/', ' ', $var );
+					$var = preg_replace( '/\b(\d+|true|false|array)\b/', ' ', $var );
+					$var = preg_replace( '/^\w+::/', '', $var );
+					$var = preg_replace( '/[^a-z0-9_-]/i', ' ', $var );
+					$var = strtolower( preg_replace( '/([a-z])\s*([A-Z])/', '$1_$2', $var ) );
+					$var = preg_replace( '/^get_/', '', $var );
+					$var = preg_replace( '/\s+/', '_', trim( $var ) );
+
+					$vars[ $k ] = '$' . $var;
+					continue;
 				}
 			}
 			$type = 'unknown';
@@ -368,8 +386,14 @@ foreach ( $filters as $hook => $data ) {
 			// This was an extracted variable, so let's create a parameter definition.
 			foreach ( $vars as $k => $var ) {
 				if ( preg_match( '#array\(#', $var, $matches ) ) {
-					$type = 'array';
 					$vars[ $k ] = '$array';
+					if ( preg_match( '#[\'"]#', $var ) ) {
+						$vars[ $k ] = '$string_list';
+					}
+					$type = 'array';
+				} elseif ( preg_match( '#\$(?:[a-zA-Z0-9_]+)\[[\'"]([^\'"]+)[\'"]\]->([a-zA-Z0-9_]+)#', $var, $matches ) ) {
+					$vars[ $k ] = '$' . $matches[1] . '_' . $matches[2];
+					$vars[ $k ] = str_replace( 'post_post_', 'post_', $vars[ $k ] );
 				} elseif ( preg_match( '#\$(?:[a-zA-Z0-9_]+)\[[\'"]([^\'"]+)[\'"]#', $var, $matches ) ) {
 					$vars[ $k ] = '$' . $matches[1];
 				} elseif ( preg_match( '#\$([a-zA-Z0-9_]+)\[\d#', $var, $matches ) ) {
@@ -378,7 +402,7 @@ foreach ( $filters as $hook => $data ) {
 					$vars[ $k ] = '$' . str_replace( 'wp_get_', '', $matches[1] );
 				} elseif ( preg_match( '#\$(?:[a-zA-Z0-9_]+)->(.+)$#', $var, $matches ) ) {
 					$vars[ $k ] = '$' . $matches[1];
-				} elseif ( preg_match( '#_[_xn]\(\s*([\'"][^\'"]+[\'"])#', $var, $matches ) ) {
+				} elseif ( preg_match( '#_[_exn]\(\s*([\'"][^\'"]+[\'"])#', $var, $matches ) ) {
 					$type = 'string';
 					$vars[ $k ] = '$' . preg_replace( '/[^a-z0-9]/', '_', strtolower( trim( $matches[1], '"\'' ) ) );
 				} elseif ( strlen( $var ) - strlen( trim( $var, '"\'' ) ) === 2 ) {
@@ -399,6 +423,7 @@ foreach ( $filters as $hook => $data ) {
 					$vars[ $k ] = '$array';
 				}
 			}
+
 			if ( ! $param ) {
 				$var = reset( $vars );
 				$param = $type . ' ' . $var;
@@ -407,7 +432,6 @@ foreach ( $filters as $hook => $data ) {
 					$param .= ' Other variable names: `' . implode( '`, `', $other ) . '`';
 				}
 			}
-
 
 			$count += 1;
 			$p = preg_split( '/ +/', $param, 3 );
