@@ -260,9 +260,17 @@ function parse_docblock( $raw_comment, $params ) {
 			array_pop( $lines );
 			break;
 	}
-
+	$inside_code = false;
 	foreach ( $lines as $line ) {
-		$line = preg_replace( '#^[ \t]*\* ?#', '', $line );
+		if ( false !== strpos( $line, '```' ) ) {
+			$inside_code = ! $inside_code;
+		}
+		if ( $inside_code ) {
+			$line = preg_replace( '#^[ \t]*\* ?#m', '', $line );
+		} else {
+			$line = preg_replace( '#^[ \t]*\*\s*#m', '', $line );
+		}
+
 		if ( preg_match( '#^Documented (in|at) #', $line ) ) {
 			return array();
 		}
