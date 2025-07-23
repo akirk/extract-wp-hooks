@@ -49,14 +49,6 @@ runs:
           echo "url=${GITHUB_REPOSITORY}.wiki.git" >> $GITHUB_OUTPUT
         fi
 
-    - name: Clone wiki repository
-      shell: bash
-      run: |
-        git clone "https://github.com/${{ steps.wiki-repo.outputs.url }}" wiki || {
-          echo "Wiki repository not found. Creating wiki directory for output."
-          mkdir -p wiki
-        }
-
     - name: Create configuration file
       shell: bash
       run: |
@@ -73,6 +65,15 @@ runs:
         EOF
         fi
 
+    - name: Clone wiki repository
+      shell: bash
+      run: |
+        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        git clone "https://github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
+          echo "Wiki repository not found. Creating wiki directory for output."
+          mkdir -p "$wiki_dir"
+        }
+
     - name: Extract WordPress hooks
       shell: bash
       run: |
@@ -87,7 +88,8 @@ runs:
     - name: Commit and push wiki changes
       shell: bash
       run: |
-        cd wiki
+        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        cd "$wiki_dir"
         if [ -d ".git" ]; then
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
