@@ -227,7 +227,9 @@ class WpHookExtractor {
 			if ( preg_match( '#@([^ ]+)(.*)#', $line, $matches ) ) {
 				$tag_name = $matches[1] . 's';
 				$tag_value = \trim( $matches[2] );
-
+				if ( ! $tag_value ) {
+					continue;
+				}
 				// If this tag was already parsed, make its value an array.
 				if ( isset( $tags[ $tag_name ] ) ) {
 					$tags[ $tag_name ][] = array( $tag_value );
@@ -367,7 +369,7 @@ class WpHookExtractor {
 							$var = preg_replace( '/(isset)?\([^)]*\)/', ' ', $var );
 							$var = preg_replace( '/\b(\d+|true|false|array)\b/', ' ', $var );
 							$var = preg_replace( '/^\w+::/', '', $var );
-							$var = preg_replace( '/[^a-z0-9_-]/i', ' ', $var );
+							$var = preg_replace( '/[^a-z0-9_>-]/i', ' ', $var );
 							$var = strtolower( preg_replace( '/([a-z])\s*([A-Z])/', '$1_$2', $var ) );
 							$var = preg_replace( '/^get_/', '', $var );
 							$var = preg_replace( '/\s+/', '_', trim( $var ) );
@@ -486,6 +488,9 @@ class WpHookExtractor {
 					$p[0] = substr( $p[0], 1 );
 				} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 					$p[0] = $this->config['namespace'] . '\\' . $p[0];
+				}
+				if ( ! isset( $p[1])) {
+					$p[1] = $p[0];
 				}
 				$doc .= "\n`{$p[0]}` {$p[1]}";
 
