@@ -79,12 +79,10 @@ runs:
       run: |
         php "${{ github.action_path }}/extract-wp-hooks.php"
         wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
-        wiki_files=$(find "$wiki_dir" -type f -name "*.md")
-        hooks_count=$(echo "$wiki_files" | wc -l)
+        wiki_files=$(find "$wiki_dir" -type f -name "*.md" | tr '\n' ':')
+        hooks_count=$(echo "$wiki_files" | tr ':' '\n' | grep -c .)
         echo "hooks-found=$hooks_count" >> $GITHUB_OUTPUT
         echo "wiki-files=$wiki_files" >> $GITHUB_OUTPUT
-        echo "$GITHUB_OUTPUT" #debug
-        cat "$GITHUB_OUTPUT" #debug
         echo "Found $hooks_count hook documentation files"
 
     - name: Commit and push wiki changes
