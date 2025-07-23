@@ -67,18 +67,8 @@ runs:
           echo "url=${GITHUB_REPOSITORY}.wiki.git" >> $GITHUB_OUTPUT
         fi
 
-    - name: Clone wiki repository
+    - name: Create configuration file
       shell: bash
-      run: |
-        wiki_dir="${{ inputs.wiki-directory }}"
-        git clone "https://x:${{ github.token }}@github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
-          echo "Wiki repository not found. Creating wiki directory for output."
-          mkdir -p "$wiki_dir"
-        }
-
-    - name: Extract WordPress hooks
-      shell: bash
-      id: extract-wp-hooks
       run: |
         config_file="${{ inputs.config-file }}"
         
@@ -136,7 +126,20 @@ runs:
         else
           echo "Using existing config file: $config_file"
         fi
-        
+
+    - name: Clone wiki repository
+      shell: bash
+      run: |
+        wiki_dir="${{ inputs.wiki-directory }}"
+        git clone "https://x:${{ github.token }}@github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
+          echo "Wiki repository not found. Creating wiki directory for output."
+          mkdir -p "$wiki_dir"
+        }
+
+    - name: Extract WordPress hooks
+      shell: bash
+      id: extract-wp-hooks
+      run: |
         # Run the PHP script
         php "${{ github.action_path }}/extract-wp-hooks.php"
         
