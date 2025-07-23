@@ -445,7 +445,7 @@ foreach ( $filters as $hook => $data ) {
 			$p = preg_split( '/ +/', $param, 3 );
 			if ( '\\' === substr( $p[0], 0, 1 ) ) {
 				$p[0] = substr( $p[0], 1 );
-			} elseif ( $config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
+			} elseif ( $config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 				$p[0] = $config['namespace'] . '\\' . $p[0];
 			}
 			if ( ! $first ) {
@@ -475,7 +475,7 @@ foreach ( $filters as $hook => $data ) {
 		} else {
 			$signature = substr( $signature, 0, -1 ) . PHP_EOL . '    ) {';
 		}
-		$signature .= PHP_EOL . '        // Your code here';
+		$signature .= PHP_EOL . '        // Your code here.';
 		if ( 'do_action' !== $data['type'] ) {
 			$signature .= PHP_EOL . '        return ' . $first . ';';
 		}
@@ -510,7 +510,7 @@ foreach ( $filters as $hook => $data ) {
 		$doc .= "- [$file](" . $config['github_blob_url'] . str_replace( ':', '#L', $file ) . ")\n";
 		$doc .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 	}
-	$doc .= "\n\n[Hooks](Hooks)\n";
+	$doc .= "\n\n[→ All Hooks](Hooks)\n";
 
 	file_put_contents(
 		$docs . "/$hook.md",
