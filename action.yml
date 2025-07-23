@@ -69,6 +69,7 @@ runs:
 
     - name: Create configuration file
       shell: bash
+      id: config-setup
       run: |
         config_file="${{ inputs.config-file }}"
         
@@ -126,11 +127,16 @@ runs:
         else
           echo "Using existing config file: $config_file"
         fi
+        
+        # Determine wiki directory from config file
+        wiki_dir=$(jq -r '.wiki_directory' "$config_file")
+        echo "wiki-directory=$wiki_dir" >> $GITHUB_OUTPUT
+        echo "Using wiki directory: $wiki_dir"
 
     - name: Clone wiki repository
       shell: bash
       run: |
-        wiki_dir="${{ inputs.wiki-directory }}"
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         protocol=$(echo "$github_server_url" | cut -d/ -f1)
         git clone "https://x:${{ github.token }}@github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
           echo "Wiki repository not found. Creating wiki directory for output."
@@ -145,7 +151,7 @@ runs:
         php "${{ github.action_path }}/extract-wp-hooks.php"
         
         # Get output values
-        wiki_dir="${{ inputs.wiki-directory }}"
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         wiki_files=$(find "$wiki_dir" -type f -name "*.md" | tr '\n' ':')
         hooks_count=$(echo "$wiki_files" | tr ':' '\n' | grep -c .)
         echo "hooks-found=$hooks_count" >> $GITHUB_OUTPUT
@@ -155,7 +161,7 @@ runs:
     - name: Commit and push wiki changes
       shell: bash
       run: |
-        wiki_dir="${{ inputs.wiki-directory }}"
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         cd "$wiki_dir"
         git config --global --add safe.directory "$wiki_dir"
         if [ -d ".git" ]; then
