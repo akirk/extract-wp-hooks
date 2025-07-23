@@ -2,7 +2,7 @@
 
 This script is intended for WordPress plugins that provide hooks that can be used by other plugins. By parsing its source code, it creates a documentation in a Github wiki.
 
-Typically, you'd first create a [`extract-wp-hooks.json`](https://github.com/akirk/extract-hooks/blob/main/extract-wp-hooks.json), and check out the Github wiki in a folder above the repo. Modify the `extract-wp-hooks.json` accordingly and execute `extract-wp-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
+Typically, you'd first create a [`.extract-wp-hooks.json`](https://github.com/akirk/extract-hooks/blob/main/extract-wp-hooks.json), and check out the Github wiki in a folder above the repo. Modify the `.extract-wp-hooks.json` accordingly and execute `extract-wp-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
 
 ## Examples
 - [https://github.com/akirk/extract-hooks/wiki/Hooks](https://github.com/akirk/extract-hooks/wiki/Hooks) (extracted from [example.php](https://github.com/akirk/extract-hooks/blob/main/example.php))
@@ -121,6 +121,46 @@ It generates this output: [example_filter3](https://github.com/akirk/extract-hoo
 > - `$mode`
 
 ## Install
+
+### Option 1: GitHub Action (Recommended)
+
+Add the following workflow file to your WordPress plugin repository at `.github/workflows/extract-hooks.yml`:
+
+```yaml
+name: Extract WordPress Hooks
+
+on:
+  push:
+    branches: [ main, master ]
+    paths: [ '**.php' ]
+  workflow_dispatch:
+
+jobs:
+  extract-hooks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: akirk/extract-wp-hooks@main
+```
+
+This will automatically extract hooks from your PHP files and update your GitHub wiki whenever you push changes.
+
+#### Configuration
+
+Create an `.extract-wp-hooks.json` file in your repository root:
+
+```json
+{
+    "namespace": "My_Plugin", // PHP Namespace used in the project.
+    "base_dir": ".", // The directory to analyse for php files.
+    "wiki_directory": "wiki", // Where the files will be written to.
+    "github_blob_url": "https://github.com/username/my-plugin/blob/main/", // This is the base url for the links to the source files.
+    "exclude_dirs": ["vendor", "tests"],
+    "ignore_filter": ["debug_hook", "internal_filter"]
+}
+```
+
+### Option 2: Composer
 
 Via composer:
 ```

@@ -1,0 +1,108 @@
+name: "Extract WordPress Hooks"
+description: "Extract WordPress hooks from your repository and generate wiki documentation"
+author: "Alex Kirk"
+
+inputs:
+  config-file:
+    description: "Path to the extract-wp-hooks.json configuration file"
+    required: false
+    default: ".extract-wp-hooks.json"
+  namespace:
+    description: "PHP Namespace that's used."
+    required: false
+  wiki-repo:
+    description: "Wiki repository URL (e.g., username/repo.wiki.git)"
+    required: false
+    default: ""
+  exclude-dirs:
+    description: "Comma-separated list of directories to exclude"
+    required: false
+    default: "vendor,node_modules"
+  ignore-filters:
+    description: "Comma-separated list of filter names to ignore"
+    required: false
+    default: ""
+
+outputs:
+  hooks-found:
+    description: "Number of hooks found and processed"
+    value: "${{ steps.extract-wp-hooks.outputs.hooks-found }}"
+  wiki-files:
+    description: "Number of wiki files generated"
+    value: "${{ steps.extract-wp-hooks.outputs.wiki-files }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: "8.0"
+
+    - name: Determine wiki repository
+      shell: bash
+      id: wiki-repo
+      run: |
+        if [ -n "${{ inputs.wiki-repo }}" ]; then
+          echo "url=${{ inputs.wiki-repo }}" >> $GITHUB_OUTPUT
+        else
+          echo "url=${GITHUB_REPOSITORY}.wiki.git" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Clone wiki repository
+      shell: bash
+      run: |
+        git clone "https://github.com/${{ steps.wiki-repo.outputs.url }}" wiki || {
+          echo "Wiki repository not found. Creating wiki directory for output."
+          mkdir -p wiki
+        }
+
+    - name: Create configuration file
+      shell: bash
+      run: |
+        if [ ! -f "${{ inputs.config-file }}" ]; then
+          cat > "${{ inputs.config-file }}" << EOF
+        {
+            "namespace": "${{ inputs.namespace }}",
+            "base_dir": ".",
+            "wiki_directory": "wiki",
+            "github_blob_url": "https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/",
+            "exclude_dirs": [$(echo "${{ inputs.exclude-dirs }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/')],
+            "ignore_filter": [$(echo "${{ inputs.ignore-filters }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' | sed 's/^""$//' | sed 's/,""$//')]
+        }
+        EOF
+        fi
+
+    - name: Extract WordPress hooks
+      shell: bash
+      run: |
+        php "${{ github.action_path }}/extract-wp-hooks.php"
+        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        wiki_files=$(find "$wiki_dir" -type f -name "*.md")
+        hooks_count=$(echo "$wiki_files" | wc -l)
+        echo "hooks-found=$hooks_count" >> $GITHUB_OUTPUT
+        echo "wiki-files=$wiki_files" >> $GITHUB_OUTPUT
+        echo "Found $hooks_count hook documentation files"
+
+    - name: Commit and push wiki changes
+      shell: bash
+      run: |
+        cd wiki
+        if [ -d ".git" ]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update hook documentation from ${GITHUB_REPOSITORY}@${GITHUB_SHA::7}"
+            git push
+            echo "Wiki updated successfully"
+          fi
+        else
+          echo "Wiki files generated in 'wiki' directory but no git repository found"
+        fi
+
+branding:
+  icon: "book-open"
+  color: "blue"
