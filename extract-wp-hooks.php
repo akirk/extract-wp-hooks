@@ -473,7 +473,7 @@ foreach ( $filters as $hook => $data ) {
 				}
 			}
 		}
-		
+
 		// Complete the function signature with parameters
 		$signature .= $param_string . ' ) {';
 		$signature .= PHP_EOL . '    // Your code here.';
@@ -483,7 +483,7 @@ foreach ( $filters as $hook => $data ) {
 		$signature .= PHP_EOL . '}';
 
 		// Add the hook registration line
-		$signature .= PHP_EOL . $hook_function . '( \'' . $hook . '\', \'prefixed_' . $hook_type . '_callback\'';
+		$signature .= PHP_EOL . $hook_function . "( '{$hook}', 'prefixed_{$hook_type}_callback'";
 
 		if ( $count > 1 ) {
 			$signature .= ', 10, ' . $count;
