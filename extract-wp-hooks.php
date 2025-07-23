@@ -352,12 +352,15 @@ foreach ( $filters as $hook => $data ) {
 
 	if ( ! empty( $data['params'] ) ) {
 		if ( 'do_action' === $data['type'] ) {
-			$signature = 'add_action(';
+			$hook_type = 'action';
+			$hook_function = 'add_action';
 		} else {
-			$signature = 'add_filter(';
+			$hook_type = 'filter';
+			$hook_function = 'add_filter';
 		}
-		$signature .= PHP_EOL . '    \'' . $hook . '\',';
-		$signature .= PHP_EOL . '    function (';
+		
+		// Create the function signature first
+		$signature = "function prefixed_{$hook_type}_callback(";
 
 		$params = "## Parameters\n";
 		$first = false;
@@ -453,7 +456,7 @@ foreach ( $filters as $hook => $data ) {
 			}
 			if ( 'unknown' === $p[0] ) {
 				$params .= "\n- `{$p[1]}`";
-				$signature .= "\n        {$p[1]},";
+				$signature .= "\n    {$p[1]},";
 				if ( isset( $p[2] ) ) {
 					$params .= ' ' . $p[2];
 				}
@@ -463,29 +466,31 @@ foreach ( $filters as $hook => $data ) {
 					$params .= ' ' . $p[2];
 				}
 				if ( substr( $p[0], -5 ) === '|null' ) { // Remove this if, if you don't want to support PHP 7.4 or below.
-					$signature .= "\n        " . substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null,';
+					$signature .= "\n    " . substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null,';
 				} else {
-					$signature .= "\n        {$p[0]} {$p[1]},";
+					$signature .= "\n    {$p[0]} {$p[1]},";
 				}
 			}
 		}
 		if ( 1 === $count ) {
-			$signature = str_replace( 'function (' . PHP_EOL . '        ', 'function ( ', substr( $signature, 0, -1 ) );
+			$signature = str_replace( 'function prefixed_' . $hook_type . '_callback(' . PHP_EOL . '    ', 'function prefixed_' . $hook_type . '_callback( ', substr( $signature, 0, -1 ) );
 			$signature .= ' ) {';
 		} else {
-			$signature = substr( $signature, 0, -1 ) . PHP_EOL . '    ) {';
+			$signature = substr( $signature, 0, -1 ) . PHP_EOL . ') {';
 		}
-		$signature .= PHP_EOL . '        // Your code here';
-		if ( 'do_action' !== $data['type'] ) {
-			$signature .= PHP_EOL . '        return ' . $first . ';';
+		$signature .= PHP_EOL . '     // Your code here.';
+		if ( 'action' !== $hook_type ) {
+			$signature .= PHP_EOL . '     return ' . $first . ';';
 		}
-		$signature .= PHP_EOL . '    }';
+		$signature .= PHP_EOL . '}';
+		
+		// Add the hook registration line
+		$signature .= PHP_EOL . $hook_function . '( \'' . $hook . '\', \'prefixed_' . $hook_type . '_callback\'';
+		
 		if ( $count > 1 ) {
-			$signature .= ',';
-			$signature .= PHP_EOL . '    10,';
-			$signature .= PHP_EOL . '    ' . $count;
+			$signature .= ', 10, ' . $count;
 		}
-		$signature .= PHP_EOL . ');';
+		$signature .= ' );';
 		if ( ! $has_example ) {
 			$doc .= '## Auto-generated Example' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 		}
