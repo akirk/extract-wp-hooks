@@ -138,6 +138,8 @@ on:
 jobs:
   extract-hooks:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push to wiki repository
     steps:
     - uses: actions/checkout@v4
     - uses: akirk/extract-wp-hooks@main
