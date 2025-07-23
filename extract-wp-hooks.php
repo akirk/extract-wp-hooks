@@ -365,6 +365,7 @@ foreach ( $filters as $hook => $data ) {
 		$params = "## Parameters\n";
 		$first = false;
 		$count = 0;
+		$param_string = '';
 		foreach ( $data['params'] as $i => $vars ) {
 			$param = false;
 			foreach ( $vars as $k => $var ) {
@@ -456,7 +457,7 @@ foreach ( $filters as $hook => $data ) {
 			}
 			if ( 'unknown' === $p[0] ) {
 				$params .= "\n- `{$p[1]}`";
-				$signature .= "\n    {$p[1]},";
+				$param_string .= ( $param_string ? ', ' : '' ) . "{$p[1]}";
 				if ( isset( $p[2] ) ) {
 					$params .= ' ' . $p[2];
 				}
@@ -466,18 +467,15 @@ foreach ( $filters as $hook => $data ) {
 					$params .= ' ' . $p[2];
 				}
 				if ( substr( $p[0], -5 ) === '|null' ) { // Remove this if, if you don't want to support PHP 7.4 or below.
-					$signature .= "\n    " . substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null,';
+					$param_string .= ( $param_string ? ', ' : '' ) . substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null';
 				} else {
-					$signature .= "\n    {$p[0]} {$p[1]},";
+					$param_string .= ( $param_string ? ', ' : '' ) . "{$p[0]} {$p[1]}";
 				}
 			}
 		}
-		if ( 1 === $count ) {
-			$signature = str_replace( 'function prefixed_' . $hook_type . '_callback(' . PHP_EOL . '    ', 'function prefixed_' . $hook_type . '_callback( ', substr( $signature, 0, -1 ) );
-			$signature .= ' ) {';
-		} else {
-			$signature = substr( $signature, 0, -1 ) . PHP_EOL . ') {';
-		}
+		
+		// Complete the function signature with parameters
+		$signature .= $param_string . ' ) {';
 		$signature .= PHP_EOL . '    // Your code here.';
 		if ( 'action' !== $hook_type ) {
 			$signature .= PHP_EOL . '    return ' . $first . ';';
