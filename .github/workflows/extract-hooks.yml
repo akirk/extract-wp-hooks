@@ -17,6 +17,8 @@ on:
 
 jobs:
   extract-hooks:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     name: Extract and document WordPress hooks
 
