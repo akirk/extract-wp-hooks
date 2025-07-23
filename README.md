@@ -206,13 +206,3 @@ You will then be able to run `extract-wp-hooks.php` from the vendor bin director
 ```
 
 Place a `.extract-wp-hooks.json` or `extract-wp-hooks.json` in your project directory to use it.
-
-Alternatively, you can use environment variables to configure the script:
-
-```bash
-EXTRACT_WP_HOOKS_NAMESPACE="My_Plugin" \
-EXTRACT_WP_HOOKS_WIKI_DIRECTORY="wiki" \
-EXTRACT_WP_HOOKS_GITHUB_BLOB_URL="https://github.com/username/my-plugin/blob/main/" \
-EXTRACT_WP_HOOKS_EXCLUDE_DIRS="vendor,tests" \
-EXTRACT_WP_HOOKS_IGNORE_FILTER="debug_hook,internal_filter" \
-./vendor/bin/extract-wp-hooks.php

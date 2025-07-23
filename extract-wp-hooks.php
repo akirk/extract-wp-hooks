@@ -15,78 +15,22 @@ function sample_config() {
 	return file_get_contents( __DIR__ . '/extract-wp-hooks.json' );
 }
 
-// Get configuration from environment variables or config file
-$config = array();
-
-// Check for environment variables first
-$env_config_keys = array(
-	'EXTRACT_WP_HOOKS_NAMESPACE' => 'namespace',
-	'EXTRACT_WP_HOOKS_BASE_DIR' => 'base_dir',
-	'EXTRACT_WP_HOOKS_WIKI_DIRECTORY' => 'wiki_directory',
-	'EXTRACT_WP_HOOKS_GITHUB_BLOB_URL' => 'github_blob_url',
-	'EXTRACT_WP_HOOKS_EXCLUDE_DIRS' => 'exclude_dirs',
-	'EXTRACT_WP_HOOKS_IGNORE_FILTER' => 'ignore_filter',
-	'EXTRACT_WP_HOOKS_IGNORE_REGEX' => 'ignore_regex',
-	'EXTRACT_WP_HOOKS_SECTION' => 'section',
-);
-
-$using_env_vars = false;
-$env_config_count = 0;
-foreach ( $env_config_keys as $env_key => $config_key ) {
-	if ( getenv( $env_key ) !== false && getenv( $env_key ) !== '' ) {
-		$using_env_vars = true;
-		$env_config_count++;
-		$value = getenv( $env_key );
-		
-		// Handle array values
-		if ( in_array( $config_key, array( 'exclude_dirs', 'ignore_filter' ) ) ) {
-			$config[ $config_key ] = $value ? explode( ',', $value ) : array();
-		} else {
-			$config[ $config_key ] = $value;
-		}
-	}
-}
-
-// Always try to load config file first for backwards compatibility
 $config_files = array( 'extract-wp-hooks.json', '.extract-wp-hooks.json' );
 $base = getcwd();
-$config_file = null;
-foreach ( $config_files as $file ) {
-	$file_path = $base . '/' . $file;
-	if ( file_exists( $file_path ) ) {
-		$config_file = $file_path;
+foreach ( $config_files as $config_file ) {
+	$config_file = $base . '/' . $config_file;
+	if ( file_exists( $config_file ) ) {
 		break;
 	}
 }
 
-if ( $config_file && file_exists( $config_file ) ) {
-	echo 'Loading ', realpath( $config_file ), PHP_EOL;
-	$file_config = json_decode( file_get_contents( $config_file ), true );
-	
-	if ( $file_config === null ) {
-		echo 'Error: Invalid JSON in config file ', $config_file, PHP_EOL;
-		exit( 1 );
-	}
-	
-	// Start with file config, then override with env vars if they exist
-	$config = array_merge( $file_config, $config );
-} elseif ( $using_env_vars ) {
-	// No config file but we have env vars - make sure we have required ones
-	if ( ! isset( $config['wiki_directory'] ) || ! isset( $config['github_blob_url'] ) ) {
-		echo 'Missing required configuration. When using environment variables, you must provide at least:', PHP_EOL;
-		echo '- EXTRACT_WP_HOOKS_WIKI_DIRECTORY', PHP_EOL;
-		echo '- EXTRACT_WP_HOOKS_GITHUB_BLOB_URL', PHP_EOL;
-		echo 'Example config file: ', PHP_EOL, sample_config(), PHP_EOL;
-		exit( 1 );
-	}
-} else {
-	// No config file and no env vars
+if ( ! file_exists( $config_file ) ) {
 	echo 'Please provide an extract-wp-hooks.json file in the current directory or the same directory as this script. Example: ', PHP_EOL, sample_config(), PHP_EOL;
-	echo 'Alternatively, you can provide configuration via environment variables.', PHP_EOL;
 	exit( 1 );
 }
+echo 'Loading ', realpath( $config_file ), PHP_EOL;
+$config = json_decode( file_get_contents( $config_file ), true );
 
-// Validate required config
 foreach ( array( 'wiki_directory', 'github_blob_url' ) as $key ) {
 	if ( ! isset( $config[ $key ] ) ) {
 		echo 'Missing config entry ', $key, '. Example: ', PHP_EOL, sample_config(), PHP_EOL;

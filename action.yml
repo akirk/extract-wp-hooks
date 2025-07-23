@@ -90,44 +90,54 @@ runs:
       shell: bash
       id: extract-wp-hooks
       run: |
-        # Set environment variables only if inputs are provided and different from defaults
-        if [ -n "${{ inputs.namespace }}" ]; then
-          export EXTRACT_WP_HOOKS_NAMESPACE="${{ inputs.namespace }}"
-        fi
+        config_file="${{ inputs.config-file }}"
         
-        if [ "${{ inputs.base-dir }}" != "." ]; then
-          export EXTRACT_WP_HOOKS_BASE_DIR="${{ inputs.base-dir }}"
-        fi
-        
-        if [ "${{ inputs.wiki-directory }}" != "wiki" ]; then
-          export EXTRACT_WP_HOOKS_WIKI_DIRECTORY="${{ inputs.wiki-directory }}"
-        fi
-        
-        if [ -n "${{ inputs.github-blob-url }}" ]; then
-          export EXTRACT_WP_HOOKS_GITHUB_BLOB_URL="${{ inputs.github-blob-url }}"
+        # If config file doesn't exist, create one from inputs
+        if [ ! -f "$config_file" ]; then
+          echo "Creating config file from action inputs..."
+          
+          # Build exclude_dirs array
+          exclude_dirs=""
+          if [ -n "${{ inputs.exclude-dirs }}" ]; then
+            IFS=',' read -ra DIRS <<< "${{ inputs.exclude-dirs }}"
+            for dir in "${DIRS[@]}"; do
+              if [ -z "$exclude_dirs" ]; then
+                exclude_dirs="\"$dir\""
+              else
+                exclude_dirs="$exclude_dirs, \"$dir\""
+              fi
+            done
+          fi
+          
+          # Build ignore_filter array
+          ignore_filters=""
+          if [ -n "${{ inputs.ignore-filters }}" ]; then
+            IFS=',' read -ra FILTERS <<< "${{ inputs.ignore-filters }}"
+            for filter in "${FILTERS[@]}"; do
+              if [ -z "$ignore_filters" ]; then
+                ignore_filters="\"$filter\""
+              else
+                ignore_filters="$ignore_filters, \"$filter\""
+              fi
+            done
+          fi
+          
+          # Create the config file
+          cat > "$config_file" << EOF
+        {
+            "namespace": "${{ inputs.namespace }}",
+            "base_dir": "${{ inputs.base-dir }}",
+            "wiki_directory": "${{ inputs.wiki-directory }}",
+            "github_blob_url": "${{ steps.github-blob-url.outputs.url }}",
+            "exclude_dirs": [$exclude_dirs],
+            "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
+            "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
+            "section": "${{ inputs.section }}"' || echo '')
+        }
+        EOF
+          echo "Generated config file: $config_file"
         else
-          export EXTRACT_WP_HOOKS_GITHUB_BLOB_URL="${{ steps.github-blob-url.outputs.url }}"
-        fi
-        
-        if [ "${{ inputs.exclude-dirs }}" != "vendor,node_modules" ]; then
-          export EXTRACT_WP_HOOKS_EXCLUDE_DIRS="${{ inputs.exclude-dirs }}"
-        fi
-        
-        if [ -n "${{ inputs.ignore-filters }}" ]; then
-          export EXTRACT_WP_HOOKS_IGNORE_FILTER="${{ inputs.ignore-filters }}"
-        fi
-        
-        if [ -n "${{ inputs.ignore-regex }}" ]; then
-          export EXTRACT_WP_HOOKS_IGNORE_REGEX="${{ inputs.ignore-regex }}"
-        fi
-        
-        if [ "${{ inputs.section }}" != "file" ]; then
-          export EXTRACT_WP_HOOKS_SECTION="${{ inputs.section }}"
-        fi
-        
-        # Check if config file exists and use it if specified
-        if [ -n "${{ inputs.config-file }}" ] && [ -f "${{ inputs.config-file }}" ]; then
-          echo "Using config file: ${{ inputs.config-file }}"
+          echo "Using existing config file: $config_file"
         fi
         
         # Run the PHP script
