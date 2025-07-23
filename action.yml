@@ -67,16 +67,6 @@ runs:
           echo "url=${GITHUB_REPOSITORY}.wiki.git" >> $GITHUB_OUTPUT
         fi
 
-    - name: Determine GitHub blob URL
-      shell: bash
-      id: github-blob-url
-      run: |
-        if [ -n "${{ inputs.github-blob-url }}" ]; then
-          echo "url=${{ inputs.github-blob-url }}" >> $GITHUB_OUTPUT
-        else
-          echo "url=https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/" >> $GITHUB_OUTPUT
-        fi
-
     - name: Clone wiki repository
       shell: bash
       run: |
@@ -95,6 +85,13 @@ runs:
         # If config file doesn't exist, create one from inputs
         if [ ! -f "$config_file" ]; then
           echo "Creating config file from action inputs..."
+          
+          # Determine GitHub blob URL
+          if [ -n "${{ inputs.github-blob-url }}" ]; then
+            github_blob_url="${{ inputs.github-blob-url }}"
+          else
+            github_blob_url="https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/"
+          fi
           
           # Build exclude_dirs array
           exclude_dirs=""
@@ -128,7 +125,7 @@ runs:
             "namespace": "${{ inputs.namespace }}",
             "base_dir": "${{ inputs.base-dir }}",
             "wiki_directory": "${{ inputs.wiki-directory }}",
-            "github_blob_url": "${{ steps.github-blob-url.outputs.url }}",
+            "github_blob_url": "$github_blob_url",
             "exclude_dirs": [$exclude_dirs],
             "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
             "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
