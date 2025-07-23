@@ -84,6 +84,7 @@ runs:
         echo "hooks-found=$hooks_count" >> $GITHUB_OUTPUT
         echo "wiki-files=$wiki_files" >> $GITHUB_OUTPUT
         echo "$GITHUB_OUTPUT" #debug
+        cat "$GITHUB_OUTPUT" #debug
         echo "Found $hooks_count hook documentation files"
 
     - name: Commit and push wiki changes
