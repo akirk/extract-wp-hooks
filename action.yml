@@ -70,7 +70,7 @@ runs:
       run: |
         wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
         protocol=$(echo "$github_server_url" | cut -d/ -f1)
-        git clone "https://x:${{ github.token }}github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
+        git clone "https://x:${{ github.token }}@github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
           echo "Wiki repository not found. Creating wiki directory for output."
           mkdir -p "$wiki_dir"
         }
