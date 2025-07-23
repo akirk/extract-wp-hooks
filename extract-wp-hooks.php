@@ -358,7 +358,7 @@ foreach ( $filters as $hook => $data ) {
 			$hook_type = 'filter';
 			$hook_function = 'add_filter';
 		}
-		
+
 		// Create the function signature first
 		$signature = "function prefixed_{$hook_type}_callback(";
 
@@ -478,15 +478,15 @@ foreach ( $filters as $hook => $data ) {
 		} else {
 			$signature = substr( $signature, 0, -1 ) . PHP_EOL . ') {';
 		}
-		$signature .= PHP_EOL . '     // Your code here.';
+		$signature .= PHP_EOL . '    // Your code here.';
 		if ( 'action' !== $hook_type ) {
-			$signature .= PHP_EOL . '     return ' . $first . ';';
+			$signature .= PHP_EOL . '    return ' . $first . ';';
 		}
 		$signature .= PHP_EOL . '}';
-		
+
 		// Add the hook registration line
 		$signature .= PHP_EOL . $hook_function . '( \'' . $hook . '\', \'prefixed_' . $hook_type . '_callback\'';
-		
+
 		if ( $count > 1 ) {
 			$signature .= ', 10, ' . $count;
 		}
