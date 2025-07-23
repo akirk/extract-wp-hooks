@@ -75,14 +75,14 @@ runs:
         # If config file doesn't exist, create one from inputs
         if [ ! -f "$config_file" ]; then
           echo "Creating config file from action inputs..."
-          
+        
           # Determine GitHub blob URL
           if [ -n "${{ inputs.github-blob-url }}" ]; then
             github_blob_url="${{ inputs.github-blob-url }}"
           else
             github_blob_url="https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/"
           fi
-          
+        
           # Build exclude_dirs array
           exclude_dirs=""
           if [ -n "${{ inputs.exclude-dirs }}" ]; then
@@ -95,7 +95,7 @@ runs:
               fi
             done
           fi
-          
+        
           # Build ignore_filter array
           ignore_filters=""
           if [ -n "${{ inputs.ignore-filters }}" ]; then
@@ -108,7 +108,7 @@ runs:
               fi
             done
           fi
-          
+        
           # Create the config file
           cat > "$config_file" << EOF
         {
