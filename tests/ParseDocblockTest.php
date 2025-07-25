@@ -16,7 +16,7 @@ class ParseDocblockTest extends TestCase {
 		return '';
 	}
 
-	public function testParseDocblockWithEmptyComment() {
+	public function test_parse_docblock_with_empty_comment() {
 		$extractor = new WpHookExtractor();
 		$result = $extractor->parse_docblock( '', array() );
 
@@ -24,7 +24,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertEmpty( $result );
 	}
 
-	public function testParseDocblockWithSimpleComment() {
+	public function test_parse_docblock_with_simple_comment() {
 		$file_path = __DIR__ . '/fixtures/docblock_simple.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -35,7 +35,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertEquals( 'Simple comment', $result['comment'] );
 	}
 
-	public function testParseDocblockWithSingleLineDocblock() {
+	public function test_parse_docblock_with_single_line_docblock() {
 		$file_path = __DIR__ . '/fixtures/docblock_single_line.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -46,7 +46,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertEquals( 'Single line docblock', $result['comment'] );
 	}
 
-	public function testParseDocblockWithMultiLineDocblock() {
+	public function test_parse_docblock_with_multi_line_docblock() {
 		$file_path = __DIR__ . '/fixtures/docblock_multi_line.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -57,7 +57,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertStringContainsString( 'Multi line docblock', $result['comment'] );
 	}
 
-	public function testParseDocblockWithParamTag() {
+	public function test_parse_docblock_with_param_tag() {
 		$file_path = __DIR__ . '/fixtures/docblock_multi_line.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -68,7 +68,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertIsArray( $result['params'] );
 	}
 
-	public function testParseDocblockIgnoresDocumentedIn() {
+	public function test_parse_docblock_ignores_documented_in() {
 		$file_path = __DIR__ . '/fixtures/docblock_documented_in.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -78,7 +78,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertEmpty( $result );
 	}
 
-	public function testParseDocblockWithReturnTag() {
+	public function test_parse_docblock_with_return_tag() {
 		$file_path = __DIR__ . '/fixtures/docblock_multi_line.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -89,7 +89,7 @@ class ParseDocblockTest extends TestCase {
 		$this->assertEquals( 'bool The result', $result['returns'] );
 	}
 
-	public function testParseDocblockWithExampleCode() {
+	public function test_parse_docblock_with_example_code() {
 		$file_path = __DIR__ . '/fixtures/docblock_with_example.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -98,16 +98,17 @@ class ParseDocblockTest extends TestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'comment', $result );
 
-		// Should contain the raw example code (not yet converted to markdown).
-		$this->assertStringContainsString( 'Example:', $result['comment'] );
-		$this->assertStringContainsString( 'add_filter', $result['comment'] );
-		$this->assertStringContainsString( 'user_data_filter', $result['comment'] );
+		// Example should now be extracted to examples array, not in comment.
+		$this->assertArrayHasKey( 'examples', $result );
+		$this->assertCount( 1, $result['examples'] );
+		$this->assertStringContainsString( 'add_filter', $result['examples'][0]['content'] );
+		$this->assertStringContainsString( 'user_data_filter', $result['examples'][0]['content'] );
 
-		// Test that it detects the example pattern for later conversion.
-		$this->assertTrue( preg_match( '/^Example:?$/m', $result['comment'] ) === 1 );
+		// Comment should not contain the example anymore.
+		$this->assertStringNotContainsString( 'Example:', $result['comment'] );
 	}
 
-	public function testParseDocblockWithExampleWordOnly() {
+	public function test_parse_docblock_with_example_word_only() {
 		$file_path = __DIR__ . '/fixtures/docblock_example_word_only.php';
 		$comment = $this->extractCommentFromFile( $file_path );
 		$extractor = new WpHookExtractor();
@@ -116,11 +117,13 @@ class ParseDocblockTest extends TestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'comment', $result );
 
-		// Should contain raw "Example" (not yet converted to markdown).
-		$this->assertStringContainsString( 'Example', $result['comment'] );
-		$this->assertStringContainsString( 'add_filter', $result['comment'] );
+		// Example should now be extracted to examples array, not in comment.
+		$this->assertArrayHasKey( 'examples', $result );
+		$this->assertCount( 1, $result['examples'] );
+		$this->assertStringContainsString( 'add_filter', $result['examples'][0]['content'] );
+		$this->assertStringContainsString( 'my_filter_function', $result['examples'][0]['content'] );
 
-		// Test that it detects the example pattern for later conversion.
-		$this->assertTrue( preg_match( '/^Example:?$/m', $result['comment'] ) === 1 );
+		// Comment should not contain the standalone "Example" line anymore.
+		$this->assertStringNotContainsString( "Example\n", $result['comment'] );
 	}
 }

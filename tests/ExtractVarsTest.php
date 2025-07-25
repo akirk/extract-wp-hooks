@@ -31,7 +31,7 @@ class ExtractVarsTest extends TestCase {
 		$this->assertStringContainsString( 'simple_hook', $result[1] );
 	}
 
-	public function testextract_varsWithMultipleParams() {
+	public function test_extract_vars_with_multiple_params() {
 		$file_path = __DIR__ . '/fixtures/multiple_params.php';
 		$tokens = token_get_all( file_get_contents( $file_path ) );
 
@@ -47,7 +47,7 @@ class ExtractVarsTest extends TestCase {
 		$this->assertArrayHasKey( 2, $result[0] );
 	}
 
-	public function testextract_varsWithDoAction() {
+	public function testextract_vars_with_do_action() {
 		$file_path = __DIR__ . '/fixtures/action_hook.php';
 		$tokens = token_get_all( file_get_contents( $file_path ) );
 
@@ -61,7 +61,7 @@ class ExtractVarsTest extends TestCase {
 		$this->assertStringContainsString( 'test_action', $result[1] );
 	}
 
-	public function testextract_varsWithComplexParameters() {
+	public function testextract_vars_with_complex_parameters() {
 		$file_path = __DIR__ . '/fixtures/complex_params.php';
 		$tokens = token_get_all( file_get_contents( $file_path ) );
 
