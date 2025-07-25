@@ -1,10 +1,9 @@
 name: Coding Standards
 
 on:
-  # Run on all pushes and on all pull requests.
   push:
-  pull_request:
-  # Allow manually triggering the workflow.
+    paths:
+      - "**.php"
   workflow_dispatch:
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
