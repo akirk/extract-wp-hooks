@@ -12,7 +12,92 @@
 
 
 function sample_config() {
-	return file_get_contents( __DIR__ . '/extract-wp-hooks.json' );
+	return file_get_contents( __DIR__ . '/.extract-wp-hooks.json' );
+}
+
+/**
+ * Extract WordPress hooks from a PHP file
+ *
+ * @param string $file_path Path to the file being processed
+ * @param array $config Configuration array
+ * @param string $relative_dir Relative directory path for the file
+ * @return array Array of extracted hooks
+ */
+function extract_hooks_from_file( $file_path, $config = array(), $relative_dir = '' ) {
+	// Set default config values
+	$config = array_merge( array(
+		'exclude_dirs' => array( 'vendor' ),
+		'ignore_filter' => array(),
+		'ignore_regex' => false,
+		'section' => 'file',
+		'namespace' => ''
+	), $config );
+	$tokens = token_get_all( file_get_contents( $file_path ) );
+	$filters = array();
+	$main_dir = $relative_dir ? strtok( $relative_dir, '/' ) : basename( $file_path );
+
+	foreach ( $tokens as $i => $token ) {
+		if ( ! is_array( $token ) || ! isset( $token[1] ) ) {
+			continue;
+		}
+		if ( ! in_array( ltrim( $token[1], '\\' ), array( 'apply_filters', 'do_action' ) ) ) {
+			continue;
+		}
+
+		$comment = '';
+		$hook = false;
+
+		for ( $j = $i; $j > max( 0, $i - 10 ); $j-- ) {
+			if ( ! is_array( $tokens[ $j ] ) ) {
+				continue;
+			}
+
+			if ( T_DOC_COMMENT === $tokens[ $j ][0] ) {
+				$comment = $tokens[ $j ][1];
+				break;
+			}
+
+			if ( T_COMMENT === $tokens[ $j ][0] ) {
+				$comment = $tokens[ $j ][1];
+				break;
+			}
+		}
+
+		for ( $j = $i + 1; $j < $i + 10; $j++ ) {
+			if ( ! is_array( $tokens[ $j ] ) ) {
+				continue;
+			}
+
+			if ( T_CONSTANT_ENCAPSED_STRING === $tokens[ $j ][0] ) {
+				$hook = trim( $tokens[ $j ][1], '"\'' );
+				break;
+			}
+		}
+
+		if (
+			$hook
+			&& ! in_array( $hook, $config['ignore_filter'] )
+			&& ( ! $config['ignore_regex'] || ! preg_match( $config['ignore_regex'], $hook ) )
+		) {
+			if ( ! isset( $filters[ $hook ] ) ) {
+				$filters[ $hook ] = array(
+					'files'   => array(),
+					'section' => 'dir' === $config['section'] ? $main_dir : basename( $file_path ),
+					'type'    => $token[1],
+					'params'  => array(),
+					'comment' => '',
+				);
+			}
+
+			$ret = extract_vars( $filters[ $hook ]['params'], $tokens, $i );
+			$file_key = $relative_dir ? $relative_dir . '/' . basename( $file_path ) . ':' . $token[2] : basename( $file_path ) . ':' . $token[2];
+			$filters[ $hook ]['files'][ $file_key ] = $ret[1];
+			$filters[ $hook ]['params'] = $ret[0];
+			$filters[ $hook ] = array_merge( $filters[ $hook ], parse_docblock( $comment, $filters[ $hook ]['params'] ) );
+		}
+	}
+
+	return $filters;
 }
 
 $config_files = array( 'extract-wp-hooks.json', '.extract-wp-hooks.json' );
@@ -81,64 +166,18 @@ foreach ( $files as $file ) {
 		continue;
 	}
 
-	$tokens = token_get_all( file_get_contents( $file ) );
-	foreach ( $tokens as $i => $token ) {
-		if ( ! is_array( $token ) || ! isset( $token[1] ) ) {
-			continue;
-		}
-		if ( ! in_array( ltrim( $token[1], '\\' ), array( 'apply_filters', 'do_action' ) ) ) {
-			continue;
-		}
+	$file_filters = extract_hooks_from_file( $file->getPathname(), $config, $dir );
 
-		$comment = '';
-		$hook = false;
-
-		for ( $j = $i; $j > max( 0, $i - 10 ); $j-- ) {
-			if ( ! is_array( $tokens[ $j ] ) ) {
-				continue;
+	// Merge results with existing filters
+	foreach ( $file_filters as $hook => $data ) {
+		if ( ! isset( $filters[ $hook ] ) ) {
+			$filters[ $hook ] = $data;
+		} else {
+			$filters[ $hook ]['files'] = array_merge( $filters[ $hook ]['files'], $data['files'] );
+			$filters[ $hook ]['params'] = array_merge_recursive( $filters[ $hook ]['params'], $data['params'] );
+			if ( ! empty( $data['comment'] ) ) {
+				$filters[ $hook ]['comment'] = $data['comment'];
 			}
-
-			if ( T_DOC_COMMENT === $tokens[ $j ][0] ) {
-				$comment = $tokens[ $j ][1];
-				break;
-			}
-
-			if ( T_COMMENT === $tokens[ $j ][0] ) {
-				$comment = $tokens[ $j ][1];
-				break;
-			}
-		}
-
-		for ( $j = $i + 1; $j < $i + 10; $j++ ) {
-			if ( ! is_array( $tokens[ $j ] ) ) {
-				continue;
-			}
-
-			if ( T_CONSTANT_ENCAPSED_STRING === $tokens[ $j ][0] ) {
-				$hook = trim( $tokens[ $j ][1], '"\'' );
-				break;
-			}
-		}
-
-		if (
-			$hook
-			&& ! in_array( $hook, $config['ignore_filter'] )
-			&& ( ! $config['ignore_regex'] || ! preg_match( $config['ignore_regex'], $hook ) )
-		) {
-			if ( ! isset( $filters[ $hook ] ) ) {
-				$filters[ $hook ] = array(
-					'files'   => array(),
-					'section' => 'dir' === $config['section'] ? $main_dir : basename( $file->getFilename() ),
-					'type'    => $token[1],
-					'params'  => array(),
-					'comment' => '',
-				);
-			}
-
-			$ret = extract_vars( $filters[ $hook ]['params'], $tokens, $i );
-			$filters[ $hook ]['files'][ $dir . '/' . $file->getFilename() . ':' . $token[2] ] = $ret[1];
-			$filters[ $hook ]['params'] = $ret[0];
-			$filters[ $hook ] = array_merge( $filters[ $hook ], parse_docblock( $comment, $filters[ $hook ]['params'] ) );
 		}
 	}
 }
@@ -450,7 +489,7 @@ foreach ( $filters as $hook => $data ) {
 			$p = preg_split( '/ +/', $param, 3 );
 			if ( '\\' === substr( $p[0], 0, 1 ) ) {
 				$p[0] = substr( $p[0], 1 );
-			} elseif ( $config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
+			} elseif ( $config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 				$p[0] = $config['namespace'] . '\\' . $p[0];
 			}
 			if ( ! $first ) {
@@ -480,7 +519,7 @@ foreach ( $filters as $hook => $data ) {
 		} else {
 			$signature = substr( $signature, 0, -1 ) . PHP_EOL . '    ) {';
 		}
-		$signature .= PHP_EOL . '        // Your code here';
+		$signature .= PHP_EOL . '        // Your code here.';
 		if ( 'do_action' !== $data['type'] ) {
 			$signature .= PHP_EOL . '        return ' . $first . ';';
 		}
@@ -515,7 +554,7 @@ foreach ( $filters as $hook => $data ) {
 		$doc .= "- [$file](" . $config['github_blob_url'] . str_replace( ':', '#L', $file ) . ")\n";
 		$doc .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 	}
-	$doc .= "\n\n[Hooks](Hooks)\n";
+	$doc .= "\n\n[← All Hooks](Hooks)\n";
 
 	file_put_contents(
 		$docs . "/$hook.md",
