@@ -2,7 +2,7 @@
 
 This script is intended for WordPress plugins that provide hooks that can be used by other plugins. By parsing its source code, it creates a documentation in a Github wiki.
 
-Typically, you'd first create a [`.extract-wp-hooks.json`](https://github.com/akirk/extract-hooks/blob/main/extract-wp-hooks.json), and check out the Github wiki in a folder above the repo. Modify the `.extract-wp-hooks.json` accordingly and execute `extract-wp-hooks.php`. This will create markdown files in the wiki folder. You can then `git commit` and `git push` the changes.
+You can configure this tool either through a JSON configuration file or directly through GitHub Action inputs. For local usage, you'll need a configuration file, but for GitHub Actions, you can specify all configuration directly in your workflow file.
 
 ## Examples
 - [https://github.com/akirk/extract-hooks/wiki/Hooks](https://github.com/akirk/extract-hooks/wiki/Hooks) (extracted from [example.php](https://github.com/akirk/extract-hooks/blob/main/example.php))
@@ -149,6 +149,23 @@ This will automatically extract hooks from your PHP files and update your GitHub
 
 #### Configuration
 
+You can configure the action in two ways:
+
+1. **Using action inputs (recommended):**
+
+```yaml
+- uses: akirk/extract-wp-hooks@main
+  with:
+    namespace: "My_Plugin"
+    base-dir: "."
+    wiki-directory: "wiki"
+    exclude-dirs: "vendor,tests,node_modules"
+    ignore-filters: "debug_hook,internal_filter"
+    section: "file"
+```
+
+2. **Using a configuration file:**
+
 Create an `.extract-wp-hooks.json` file in your repository root:
 
 ```json
@@ -161,6 +178,21 @@ Create an `.extract-wp-hooks.json` file in your repository root:
     "ignore_filter": ["debug_hook", "internal_filter"]
 }
 ```
+
+#### Available Action Inputs
+
+| Input | Description | Default |
+|-------|-------------|---------|
+| `namespace` | PHP Namespace that's used | |
+| `base-dir` | Base directory to scan for hooks | `.` |
+| `wiki-directory` | Directory to store wiki files | `wiki` |
+| `github-blob-url` | GitHub blob URL for source links | Auto-generated from repository |
+| `exclude-dirs` | Comma-separated list of directories to exclude | `vendor,node_modules` |
+| `ignore-filters` | Comma-separated list of filter names to ignore | |
+| `ignore-regex` | Regex pattern to ignore filter names | |
+| `section` | How to group hooks in documentation: 'file' or 'dir' | `file` |
+| `wiki-repo` | Wiki repository URL (e.g., username/repo.wiki.git) | Auto-generated from repository |
+| `config-file` | Path to config file (optional if other inputs are provided) | `.extract-wp-hooks.json` |
 
 ### Option 2: Composer
 

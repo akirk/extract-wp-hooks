@@ -4,22 +4,40 @@ author: "Alex Kirk"
 
 inputs:
   config-file:
-    description: "Path to the extract-wp-hooks.json configuration file"
+    description: "Path to the extract-wp-hooks.json configuration file (optional if other config inputs are provided)"
     required: false
     default: ".extract-wp-hooks.json"
   namespace:
     description: "PHP Namespace that's used."
     required: false
-  wiki-repo:
-    description: "Wiki repository URL (e.g., username/repo.wiki.git)"
+  base-dir:
+    description: "Base directory to scan for hooks (default: current directory)"
     required: false
-    default: ""
+    default: "."
+  wiki-directory:
+    description: "Directory to store wiki files"
+    required: false
+    default: "wiki"
+  github-blob-url:
+    description: "GitHub blob URL for source links"
+    required: false
   exclude-dirs:
     description: "Comma-separated list of directories to exclude"
     required: false
     default: "vendor,node_modules"
   ignore-filters:
     description: "Comma-separated list of filter names to ignore"
+    required: false
+    default: ""
+  ignore-regex:
+    description: "Regex pattern to ignore filter names"
+    required: false
+  section:
+    description: "How to group hooks in documentation: 'file' or 'dir'"
+    required: false
+    default: "file"
+  wiki-repo:
+    description: "Wiki repository URL (e.g., username/repo.wiki.git)"
     required: false
     default: ""
 
@@ -51,24 +69,74 @@ runs:
 
     - name: Create configuration file
       shell: bash
+      id: config-setup
       run: |
-        if [ ! -f "${{ inputs.config-file }}" ]; then
-          cat > "${{ inputs.config-file }}" << EOF
+        config_file="${{ inputs.config-file }}"
+        
+        # If config file doesn't exist, create one from inputs
+        if [ ! -f "$config_file" ]; then
+          echo "Creating config file from action inputs..."
+        
+          # Determine GitHub blob URL
+          if [ -n "${{ inputs.github-blob-url }}" ]; then
+            github_blob_url="${{ inputs.github-blob-url }}"
+          else
+            github_blob_url="https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/"
+          fi
+        
+          # Build exclude_dirs array
+          exclude_dirs=""
+          if [ -n "${{ inputs.exclude-dirs }}" ]; then
+            IFS=',' read -ra DIRS <<< "${{ inputs.exclude-dirs }}"
+            for dir in "${DIRS[@]}"; do
+              if [ -z "$exclude_dirs" ]; then
+                exclude_dirs="\"$dir\""
+              else
+                exclude_dirs="$exclude_dirs, \"$dir\""
+              fi
+            done
+          fi
+        
+          # Build ignore_filter array
+          ignore_filters=""
+          if [ -n "${{ inputs.ignore-filters }}" ]; then
+            IFS=',' read -ra FILTERS <<< "${{ inputs.ignore-filters }}"
+            for filter in "${FILTERS[@]}"; do
+              if [ -z "$ignore_filters" ]; then
+                ignore_filters="\"$filter\""
+              else
+                ignore_filters="$ignore_filters, \"$filter\""
+              fi
+            done
+          fi
+        
+          # Create the config file
+          cat > "$config_file" << EOF
         {
             "namespace": "${{ inputs.namespace }}",
-            "base_dir": ".",
-            "wiki_directory": "wiki",
-            "github_blob_url": "https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/",
-            "exclude_dirs": [$(echo "${{ inputs.exclude-dirs }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/')],
-            "ignore_filter": [$(echo "${{ inputs.ignore-filters }}" | sed 's/,/","/g' | sed 's/^/"/' | sed 's/$/"/' | sed 's/^""$//' | sed 's/,""$//')]
+            "base_dir": "${{ inputs.base-dir }}",
+            "wiki_directory": "${{ inputs.wiki-directory }}",
+            "github_blob_url": "$github_blob_url",
+            "exclude_dirs": [$exclude_dirs],
+            "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
+            "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
+            "section": "${{ inputs.section }}"' || echo '')
         }
         EOF
+          echo "Generated config file: $config_file"
+        else
+          echo "Using existing config file: $config_file"
         fi
+        
+        # Determine wiki directory from config file
+        wiki_dir=$(jq -r '.wiki_directory' "$config_file")
+        echo "wiki-directory=$wiki_dir" >> $GITHUB_OUTPUT
+        echo "Using wiki directory: $wiki_dir"
 
     - name: Clone wiki repository
       shell: bash
       run: |
-        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         protocol=$(echo "$github_server_url" | cut -d/ -f1)
         git clone "https://x:${{ github.token }}@github.com/${{ steps.wiki-repo.outputs.url }}" "$wiki_dir" || {
           echo "Wiki repository not found. Creating wiki directory for output."
@@ -77,9 +145,13 @@ runs:
 
     - name: Extract WordPress hooks
       shell: bash
+      id: extract-wp-hooks
       run: |
+        # Run the PHP script
         php "${{ github.action_path }}/extract-wp-hooks.php"
-        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        
+        # Get output values
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         wiki_files=$(find "$wiki_dir" -type f -name "*.md" | tr '\n' ':')
         hooks_count=$(echo "$wiki_files" | tr ':' '\n' | grep -c .)
         echo "hooks-found=$hooks_count" >> $GITHUB_OUTPUT
@@ -89,7 +161,7 @@ runs:
     - name: Commit and push wiki changes
       shell: bash
       run: |
-        wiki_dir=$(jq -r '.wiki_directory' "${{ inputs.config-file }}")
+        wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         cd "$wiki_dir"
         git config --global --add safe.directory "$wiki_dir"
         if [ -d ".git" ]; then
