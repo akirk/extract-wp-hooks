@@ -510,7 +510,7 @@ foreach ( $filters as $hook => $data ) {
 		$doc .= "- [$file](" . $config['github_blob_url'] . str_replace( ':', '#L', $file ) . ")\n";
 		$doc .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 	}
-	$doc .= "\n\n[→ All Hooks](Hooks)\n";
+	$doc .= "\n\n[← All Hooks](Hooks)\n";
 
 	file_put_contents(
 		$docs . "/$hook.md",
