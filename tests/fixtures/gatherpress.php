@@ -13,7 +13,7 @@ function get_pseudopostmetas(): array {
 	 *
 	 * @example
 	 *   Example use of the filter to illustrate function signatures for the callbacks.
-	 *   ```
+	 *   ```php
 	 *   \add_filter(
 	 *       'gatherpress_pseudopostmetas',
 	 *       function ( array $pseudopostmetas ): array {
