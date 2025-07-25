@@ -1,6 +1,5 @@
 {
     "name": "akirk/extract-wp-hooks",
-    "version": "1.0.2",
     "description": "Extract available WordPress hooks for a Github Wiki",
     "type": "library",
     "license": "GPL-2.0-or-later",
@@ -12,10 +11,21 @@
     "bin": [
         "extract-wp-hooks.php"
     ],
+    "require": {
+        "php": ">=7.4"
+    },
     "require-dev": {
-        "phpunit/phpunit": "^9.0|^10.0|^11.0"
+        "phpunit/phpunit": "^9.0|^10.0|^11.0",
+        "wp-coding-standards/wpcs": "^3.0"
     },
     "scripts": {
-        "test": "phpunit tests/"
+        "test": "phpunit tests/",
+        "check-cs": "phpcs",
+        "fix": "phpcbf"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
