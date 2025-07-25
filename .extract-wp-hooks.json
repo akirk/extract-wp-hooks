@@ -1,7 +1,7 @@
 {
     "namespace": "Extract_WP_Hooks",
     "base_dir": ".",
-    "wiki_directory": "../extract-wp-hooks.wiki",
+    "wiki_directory": "wiki",
     "github_blob_url": "https://github.com/akirk/extract-wp-hooks/blob/main/",
     "ignore_filter": [
         "filter_name1",
