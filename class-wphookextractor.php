@@ -221,7 +221,7 @@ class WpHookExtractor {
 				$line = preg_replace( '#^[ \t]*\*[ ]?#', '', $line );
 
 				// Determine base indentation from first non-empty line in code block.
-				if ( nul === $code_block_indent && trim( $line ) !== '' ) {
+				if ( null === $code_block_indent && trim( $line ) !== '' ) {
 					// Find the leading whitespace of this line.
 					preg_match( '#^(\s*)#', $line, $matches );
 					$code_block_indent = $matches[1];
