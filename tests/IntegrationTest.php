@@ -142,7 +142,7 @@ class IntegrationTest extends TestCase {
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
 		$this->assertArrayHasKey( 'gatherpress_pseudopostmetas', $documentation['hooks'] );
-		
+
 		$hook_content = $documentation['hooks']['gatherpress_pseudopostmetas'];
 		$this->assertStringContainsString( '## Example', $hook_content );
 		$this->assertStringContainsString( 'event-organiser', $hook_content );

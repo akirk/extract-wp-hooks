@@ -204,35 +204,35 @@ class WpHookExtractor {
 		$code_block_indent = null;
 
 		foreach ( $lines as $line ) {
-			// Check for code block markers
+			// Check for code block markers.
 			if ( false !== strpos( $line, '```' ) ) {
 				$inside_code = ! $inside_code;
 				if ( $inside_code ) {
-					// Starting a code block - reset indentation tracking
+					// Starting a code block - reset indentation tracking.
 					$code_block_indent = null;
 				} else {
-					// Ending a code block - reset indentation tracking
+					// Ending a code block - reset indentation tracking.
 					$code_block_indent = null;
 				}
 			}
 
 			if ( $inside_code ) {
-				// For code blocks, preserve relative indentation
+				// For code blocks, preserve relative indentation.
 				$line = preg_replace( '#^[ \t]*\*[ ]?#', '', $line );
 
-				// Determine base indentation from first non-empty line in code block
-				if ( $code_block_indent === null && trim( $line ) !== '' ) {
-					// Find the leading whitespace of this line
+				// Determine base indentation from first non-empty line in code block.
+				if ( nul === $code_block_indent && trim( $line ) !== '' ) {
+					// Find the leading whitespace of this line.
 					preg_match( '#^(\s*)#', $line, $matches );
 					$code_block_indent = $matches[1];
 				}
 
-				// Remove the base indentation from all lines to normalize
-				if ( $code_block_indent !== null && strpos( $line, $code_block_indent ) === 0 ) {
+				// Remove the base indentation from all lines to normalize.
+				if ( null !== $code_block_indent && strpos( $line, $code_block_indent ) === 0 ) {
 					$line = substr( $line, strlen( $code_block_indent ) );
 				}
 			} else {
-				// For non-code content, strip all leading whitespace as before
+				// For non-code content, strip all leading whitespace as before.
 				$line = preg_replace( '#^[ \t]*\*\s*#m', '', $line );
 			}
 
@@ -240,41 +240,41 @@ class WpHookExtractor {
 				return array();
 			}
 
-			// Handle both @example tags and "Example:" patterns
+			// Handle both @example tags and "Example:" patterns.
 			if ( preg_match( '#^@example(.*)#', $line, $matches ) || preg_match( '#^Example:?(\s*)$#', $line, $matches ) ) {
-				// If we were already collecting an example, save it first
-				if ( $current_example !== null ) {
+				// If we were already collecting an example, save it first.
+				if ( null !== $current_example ) {
 					if ( ! isset( $tags['examples'] ) ) {
 						$tags['examples'] = array();
 					}
 					$tags['examples'][] = array(
-						'title' => $current_example,
-						'content' => trim( $example_content )
+						'title'   => $current_example,
+						'content' => trim( $example_content ),
 					);
 				}
 
-				// Start collecting new example
+				// Start collecting new example.
 				$current_example = trim( $matches[1] );
 				$example_content = '';
 				continue;
 			}
 
-			// If we're currently collecting an example and hit another @ tag, finish the example
-			if ( $current_example !== null && preg_match( '#^@([^ ]+)#', $line ) ) {
+			// If we're currently collecting an example and hit another @ tag, finish the example.
+			if ( null !== $current_example && preg_match( '#^@([^ ]+)#', $line ) ) {
 				if ( ! isset( $tags['examples'] ) ) {
 					$tags['examples'] = array();
 				}
 				$tags['examples'][] = array(
-					'title' => $current_example,
-					'content' => trim( $example_content )
+					'title'   => $current_example,
+					'content' => trim( $example_content ),
 				);
 				$current_example = null;
 				$example_content = '';
-				// Continue processing this line as a regular tag
+				// Continue processing this line as a regular tag.
 			}
 
-			// If we're collecting example content, add this line to it
-			if ( $current_example !== null ) {
+			// If we're collecting example content, add this line to it.
+			if ( null !== $current_example ) {
 				$example_content .= "$line\n";
 				continue;
 			}
@@ -308,14 +308,14 @@ class WpHookExtractor {
 			$comment .= "$line\n";
 		}
 
-		// Handle any remaining example at the end
-		if ( $current_example !== null ) {
+		// Handle any remaining example at the end.
+		if ( null !== $current_example ) {
 			if ( ! isset( $tags['examples'] ) ) {
 				$tags['examples'] = array();
 			}
 			$tags['examples'][] = array(
-				'title' => $current_example,
-				'content' => trim( $example_content )
+				'title'   => $current_example,
+				'content' => trim( $example_content ),
 			);
 		}
 		if ( ! isset( $tags['params'] ) ) {
@@ -416,7 +416,7 @@ class WpHookExtractor {
 				$doc .= PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
 			}
 
-			// Handle examples (both @example tags and Example: patterns)
+			// Handle examples (both @example tags and Example: patterns).
 			if ( ! empty( $data['examples'] ) ) {
 				$has_example = true;
 				foreach ( $data['examples'] as $example ) {
@@ -580,7 +580,7 @@ class WpHookExtractor {
 				} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 					$p[0] = $this->config['namespace'] . '\\' . $p[0];
 				}
-				if ( ! isset( $p[1])) {
+				if ( ! isset( $p[1] ) ) {
 					$p[1] = '';
 				}
 				$doc .= "\n`{$p[0]}` {$p[1]}";

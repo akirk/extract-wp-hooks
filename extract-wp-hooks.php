@@ -47,9 +47,8 @@ if ( empty( $config['namespace'] ) ) {
 	$config['namespace'] = '';
 }
 
-// Set base directory
 $base = isset( $config['base_dir'] ) ? $config['base_dir'] : getcwd();
-if ( $base === '.' ) {
+if ( '.' === $base ) {
 	$base = getcwd();
 }
 

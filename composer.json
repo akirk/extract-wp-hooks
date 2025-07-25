@@ -20,8 +20,8 @@
     },
     "scripts": {
         "test": "phpunit tests/",
-        "check-cs": "phpcs",
-        "fix": "phpcbf"
+        "phpcs": "phpcs",
+        "phpcbf": "phpcbf"
     },
     "config": {
         "allow-plugins": {
