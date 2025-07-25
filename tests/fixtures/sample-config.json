@@ -1,0 +1,7 @@
+{
+	"wiki_directory": "test-docs",
+	"github_blob_url": "https://github.com/test/repo/blob/main/",
+	"exclude_dirs": ["test-exclude"],
+	"ignore_filter": ["test_ignore"],
+	"section": "file"
+}
