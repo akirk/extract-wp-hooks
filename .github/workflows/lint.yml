@@ -47,6 +47,13 @@ jobs:
             ${{ runner.os }}-php-${{ matrix.php-version }}-
             ${{ runner.os }}-php-
 
+      - name: Show current commit
+        run: git rev-parse HEAD
+
+      - name: Show extract-wp-hooks.php (20 lines before and after 50)
+        run: |
+          nl -ba extract-wp-hooks.php | sed -n '30,70p'
+
       - name: Composer update
         run: composer update
 
