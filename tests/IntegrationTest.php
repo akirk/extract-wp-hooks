@@ -134,7 +134,7 @@ class IntegrationTest extends TestCase {
 	}
 
 	public function test_create_documentation_content_with_example_tag() {
-		$file_path = __DIR__ . '/fixtures/gatherpress1.php';
+		$file_path = __DIR__ . '/fixtures/gatherpress.php';
 		$extractor = new WpHookExtractor();
 		$hooks = $extractor->extract_hooks_from_file( $file_path );
 
