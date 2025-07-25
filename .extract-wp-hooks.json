@@ -6,5 +6,6 @@
     "ignore_filter": [
         "filter_name1",
         "filter_name2"
-    ]
+    ],
+    "example_format": 2
 }
