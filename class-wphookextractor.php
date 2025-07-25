@@ -12,7 +12,7 @@ class WpHookExtractor {
 				'ignore_regex'  => false,
 				'section'       => 'file',
 				'namespace'     => '',
-				'example_format' => 'default', // or prefixed
+				'example_style' => 'default', // or prefixed
 			),
 			$config
 		);
@@ -553,7 +553,7 @@ class WpHookExtractor {
 				}
 
 				// Generate signature based on format.
-				switch ( $this->config['example_format'] ) {
+				switch ( $this->config['example_style'] ) {
 					case 'prefixed':
 						$signature = "function prefixed_{$hook_type}_callback( ";
 						$signature .= implode( ', ', $signature_params ) . ' ) {';
@@ -569,18 +569,26 @@ class WpHookExtractor {
 						$signature .= ' );';
 						break;
 					default:
-						$signature = $hook_function . "( '{$hook}', function( ";
-						$signature .= implode( ', ', $signature_params ) . ' ) {';
-						$signature .= PHP_EOL . '    // Your code here.';
-						if ( 'action' !== $hook_type ) {
-							$signature .= PHP_EOL . '    return ' . $first . ';';
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '' . '    function(';
+						if ( count( $signature_params ) === 1 ) {
+							$signature .= ' '.  $signature_params[0] . ' ) {';
+						} elseif ( count( $signature_params ) > 2 ) {
+							$signature .= PHP_EOL . '        ';
+							$signature .= implode( ',' . PHP_EOL . '        ', $signature_params ) . PHP_EOL . '    ) {';
 						}
-						$signature .= PHP_EOL . '}';
+						$signature .= PHP_EOL . '        // Your code here.';
+						if ( 'action' !== $hook_type ) {
+							$signature .= PHP_EOL . '        return ' . $first . ';';
+						}
+						$signature .= PHP_EOL . '    }';
 
 						if ( $count > 1 ) {
-							$signature .= ', 10, ' . $count;
+							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $count . PHP_EOL;
+						} else {
+							$signature .= PHP_EOL;
+
 						}
-						$signature .= ' );';
+						$signature .= ');';
 						break;
 				}
 				if ( ! $has_example ) {

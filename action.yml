@@ -40,8 +40,8 @@ inputs:
     description: "Wiki repository URL (e.g., username/repo.wiki.git)"
     required: false
     default: ""
-  example-format:
-    description: "Format for example code in documentation 'default' or 'prefixed'"
+  example-style:
+    description: "Style for the auto-generated example code: 'default' or 'prefixed'"
     required: false
     default: "default"
 
@@ -122,7 +122,7 @@ runs:
             "wiki_directory": "${{ inputs.wiki-directory }}",
             "github_blob_url": "$github_blob_url",
             "exclude_dirs": [$exclude_dirs],
-            "example_format": "${{ inputs.example-format }}",
+            "example_style": "${{ inputs.example-style }}",
             "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
             "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
             "section": "${{ inputs.section }}"' || echo '')
