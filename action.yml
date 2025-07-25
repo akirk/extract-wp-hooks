@@ -40,6 +40,10 @@ inputs:
     description: "Wiki repository URL (e.g., username/repo.wiki.git)"
     required: false
     default: ""
+  example-format:
+    description: "Format for example code in documentation 'default' or 'prefixed'"
+    required: false
+    default: "default"
 
 outputs:
   hooks-found:
@@ -72,18 +76,18 @@ runs:
       id: config-setup
       run: |
         config_file="${{ inputs.config-file }}"
-        
+
         # If config file doesn't exist, create one from inputs
         if [ ! -f "$config_file" ]; then
           echo "Creating config file from action inputs..."
-        
+
           # Determine GitHub blob URL
           if [ -n "${{ inputs.github-blob-url }}" ]; then
             github_blob_url="${{ inputs.github-blob-url }}"
           else
             github_blob_url="https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/"
           fi
-        
+
           # Build exclude_dirs array
           exclude_dirs=""
           if [ -n "${{ inputs.exclude-dirs }}" ]; then
@@ -96,7 +100,7 @@ runs:
               fi
             done
           fi
-        
+
           # Build ignore_filter array
           ignore_filters=""
           if [ -n "${{ inputs.ignore-filters }}" ]; then
@@ -109,7 +113,7 @@ runs:
               fi
             done
           fi
-        
+
           # Create the config file
           cat > "$config_file" << EOF
         {
@@ -118,6 +122,7 @@ runs:
             "wiki_directory": "${{ inputs.wiki-directory }}",
             "github_blob_url": "$github_blob_url",
             "exclude_dirs": [$exclude_dirs],
+            "example_format": "${{ inputs.example-format }}",
             "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
             "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
             "section": "${{ inputs.section }}"' || echo '')
@@ -127,7 +132,7 @@ runs:
         else
           echo "Using existing config file: $config_file"
         fi
-        
+
         # Determine wiki directory from config file
         wiki_dir=$(jq -r '.wiki_directory' "$config_file")
         echo "wiki-directory=$wiki_dir" >> $GITHUB_OUTPUT
@@ -149,7 +154,7 @@ runs:
       run: |
         # Run the PHP script
         php "${{ github.action_path }}/extract-wp-hooks.php"
-        
+
         # Get output values
         wiki_dir="${{ steps.config-setup.outputs.wiki-directory }}"
         wiki_files=$(find "$wiki_dir" -type f -name "*.md" | tr '\n' ':')
