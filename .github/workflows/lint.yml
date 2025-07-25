@@ -47,6 +47,9 @@ jobs:
             ${{ runner.os }}-php-${{ matrix.php-version }}-
             ${{ runner.os }}-php-
 
+      - name: Composer update
+        run: composer update
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
