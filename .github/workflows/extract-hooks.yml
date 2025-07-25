@@ -2,17 +2,9 @@ name: Extract WordPress Hooks
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     paths:
       - "**.php"
-      - "extract-wp-hooks.json"
-      - ".extract-wp-hooks.json"
-  pull_request:
-    branches: [main, master]
-    paths:
-      - "**.php"
-      - "extract-wp-hooks.json"
-      - ".extract-wp-hooks.json"
   workflow_dispatch:
 
 jobs:
