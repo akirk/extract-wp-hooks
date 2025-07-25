@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Coding Standards for Plugins">
+	<description>Generally-applicable sniffs for WordPress plugins</description>
+
+	<config name="text_domain" value="expose-blueprint" />
+
+	<rule ref="WordPress">
+	</rule>
+	<rule ref="WordPress-Core">
+		<exclude name="Generic.Formatting.MultipleStatementAlignment.NotSameWarning" />
+		<exclude name="WordPress.PHP.StrictInArray.MissingTrueStrict" />
+		<exclude name="Squiz.Commenting.ClassComment.Missing" />
+		<exclude name="Squiz.Commenting.FileComment.Missing" />
+		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag" />
+		<exclude name="Squiz.Commenting.VariableComment.Missing" />
+		<exclude name="Squiz.Commenting.FunctionComment.Missing" />
+	</rule>
+	<rule ref="WordPress-Docs" />
+
+	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.Security.EscapeOutput.OutputNotEscaped">
+		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
+		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
+		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
+		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_mkdir">
+		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.Security.EscapeOutput">
+		<properties>
+			<!-- Some common functions that might technically require output escaping, but rarely cause anything but false positives -->
+			<property name="customAutoEscapedFunctions" type="array">
+				<element value="__" />
+				<element value="_e" />
+				<element value="_x" />
+				<element value="wp_create_nonce" />
+				<element value="plugin_dir_url" />
+				<element value="plugins_url" />
+				<element value="admin_url" />
+				<element value="sanitize_text_field" />
+				<element value="sanitize_textarea_field" />
+				<element value="get_locale" />
+				<element value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
+				<element value="validate_feed_catch_all" />
+				<element value="validate_feed_rules" />
+			</property>
+		</properties>
+		<type>warning</type>
+		<exclude-pattern>tests/bootstrap.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.Security.ValidatedSanitizedInput">
+		<properties>
+			<property name="customSanitizingFunctions" type="array">
+				<element value="validate_feed_catch_all" />
+				<element value="validate_feed_rules" />
+				<element value="check_url" />
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
+		<type>warning</type>
+	</rule>
+
+	<!-- Check all PHP files in directory tree by default. -->
+	<arg name="extensions" value="php"/>
+	<file>.</file>
+	<exclude-pattern>/vendor/</exclude-pattern>
+	<exclude-pattern>/tests/fixtures/</exclude-pattern>
+
+	<!-- Show progress and sniff codes in all reports -->
+	<arg value="ps"/>
+
+</ruleset>
