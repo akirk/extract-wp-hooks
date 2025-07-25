@@ -1,4 +1,4 @@
-name: CS
+name: Coding Standards
 
 on:
   # Run on all pushes and on all pull requests.
@@ -15,7 +15,6 @@ concurrency:
 
 jobs:
   checkcs:
-    name: "Basic CS and QA checks"
     runs-on: ubuntu-latest
 
     steps:
