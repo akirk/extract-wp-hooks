@@ -12,7 +12,7 @@ class WpHookExtractor {
 				'ignore_regex'  => false,
 				'section'       => 'file',
 				'namespace'     => '',
-				'example_format' => 1,
+				'example_format' => 'default', // or prefixed
 			),
 			$config
 		);
@@ -554,7 +554,7 @@ class WpHookExtractor {
 
 				// Generate signature based on format.
 				switch ( $this->config['example_format'] ) {
-					case 2:
+					case 'prefixed':
 						$signature = "function prefixed_{$hook_type}_callback( ";
 						$signature .= implode( ', ', $signature_params ) . ' ) {';
 						$signature .= PHP_EOL . '    // Your code here.';

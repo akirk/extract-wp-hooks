@@ -2,14 +2,14 @@
 /**
  * Test hook with Example word only
  *
- * This hook allows filtering the post title.
+ * This hook allows filtering the post content.
  *
  * Example
  *
  * You can use this hook like this:
- * add_filter('post_title_filter', 'my_filter_function');
+ * add_filter('post_content_filter', 'my_filter_function');
  *
- * @param string $title The post title
- * @return string Modified title
+ * @param string $content The post content
+ * @return string Modified content
  */
-return apply_filters( 'post_title_filter', $title );
+return apply_filters( 'post_content_filter', $content );
