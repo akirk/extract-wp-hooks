@@ -1,0 +1,22 @@
+name: Extract WordPress Hooks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.php"
+  workflow_dispatch:
+
+jobs:
+  extract-wp-hooks:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    name: Extract and document WordPress hooks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract WordPress hooks
+        uses: akirk/extract-wp-hooks@main

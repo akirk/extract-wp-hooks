@@ -19,7 +19,7 @@ class WpHookExtractor {
 
 	public function extract_hooks_from_file( $file_path, $relative_dir = '' ) {
 		$tokens = \token_get_all( file_get_contents( $file_path ) );
-		$filters = array();
+		$hooks = array();
 		$main_dir = $relative_dir ? strtok( $relative_dir, '/' ) : basename( $file_path );
 
 		foreach ( $tokens as $i => $token ) {
@@ -65,8 +65,8 @@ class WpHookExtractor {
 				&& ! in_array( $hook, $this->config['ignore_filter'] )
 				&& ( ! $this->config['ignore_regex'] || ! preg_match( $this->config['ignore_regex'], $hook ) )
 			) {
-				if ( ! isset( $filters[ $hook ] ) ) {
-					$filters[ $hook ] = array(
+				if ( ! isset( $hooks[ $hook ] ) ) {
+					$hooks[ $hook ] = array(
 						'files'   => array(),
 						'section' => 'dir' === $this->config['section'] ? $main_dir : basename( $file_path ),
 						'type'    => $token[1],
@@ -75,15 +75,15 @@ class WpHookExtractor {
 					);
 				}
 
-				$ret = $this->extract_vars( $filters[ $hook ]['params'], $tokens, $i );
+				$ret = $this->extract_vars( $hooks[ $hook ]['params'], $tokens, $i );
 				$file_key = $relative_dir ? $relative_dir . '/' . basename( $file_path ) . ':' . $token[2] : basename( $file_path ) . ':' . $token[2];
-				$filters[ $hook ]['files'][ $file_key ] = $ret[1];
-				$filters[ $hook ]['params'] = $ret[0];
-				$filters[ $hook ] = array_merge( $filters[ $hook ], $this->parse_docblock( $comment, $filters[ $hook ]['params'] ) );
+				$hooks[ $hook ]['files'][ $file_key ] = $ret[1];
+				$hooks[ $hook ]['params'] = $ret[0];
+				$hooks[ $hook ] = array_merge( $hooks[ $hook ], $this->parse_docblock( $comment, $hooks[ $hook ]['params'] ) );
 			}
 		}
 
-		return $filters;
+		return $hooks;
 	}
 
 	public function extract_vars( $params, $tokens, $i ) {
@@ -199,18 +199,84 @@ class WpHookExtractor {
 				break;
 		}
 		$inside_code = false;
+		$current_example = null;
+		$example_content = '';
+		$code_block_indent = null;
+
 		foreach ( $lines as $line ) {
+			// Check for code block markers.
 			if ( false !== strpos( $line, '```' ) ) {
 				$inside_code = ! $inside_code;
+				if ( $inside_code ) {
+					// Starting a code block - reset indentation tracking.
+					$code_block_indent = null;
+				} else {
+					// Ending a code block - reset indentation tracking.
+					$code_block_indent = null;
+				}
 			}
+
 			if ( $inside_code ) {
-				$line = preg_replace( '#^[ \t]*\* ?#m', '', $line );
+				// For code blocks, preserve relative indentation.
+				$line = preg_replace( '#^[ \t]*\*[ ]?#', '', $line );
+
+				// Determine base indentation from first non-empty line in code block.
+				if ( null === $code_block_indent && trim( $line ) !== '' ) {
+					// Find the leading whitespace of this line.
+					preg_match( '#^(\s*)#', $line, $matches );
+					$code_block_indent = $matches[1];
+				}
+
+				// Remove the base indentation from all lines to normalize.
+				if ( null !== $code_block_indent && strpos( $line, $code_block_indent ) === 0 ) {
+					$line = substr( $line, strlen( $code_block_indent ) );
+				}
 			} else {
+				// For non-code content, strip all leading whitespace as before.
 				$line = preg_replace( '#^[ \t]*\*\s*#m', '', $line );
 			}
 
 			if ( preg_match( '#^Documented (in|at) #', $line ) ) {
 				return array();
+			}
+
+			// Handle both @example tags and "Example:" patterns.
+			if ( preg_match( '#^@example(.*)#', $line, $matches ) || preg_match( '#^Example:?(\s*)$#', $line, $matches ) ) {
+				// If we were already collecting an example, save it first.
+				if ( null !== $current_example ) {
+					if ( ! isset( $tags['examples'] ) ) {
+						$tags['examples'] = array();
+					}
+					$tags['examples'][] = array(
+						'title'   => $current_example,
+						'content' => trim( $example_content ),
+					);
+				}
+
+				// Start collecting new example.
+				$current_example = trim( $matches[1] );
+				$example_content = '';
+				continue;
+			}
+
+			// If we're currently collecting an example and hit another @ tag, finish the example.
+			if ( null !== $current_example && preg_match( '#^@([^ ]+)#', $line ) ) {
+				if ( ! isset( $tags['examples'] ) ) {
+					$tags['examples'] = array();
+				}
+				$tags['examples'][] = array(
+					'title'   => $current_example,
+					'content' => trim( $example_content ),
+				);
+				$current_example = null;
+				$example_content = '';
+				// Continue processing this line as a regular tag.
+			}
+
+			// If we're collecting example content, add this line to it.
+			if ( null !== $current_example ) {
+				$example_content .= "$line\n";
+				continue;
 			}
 
 			if ( preg_match( '#@(param)(.*)#', $line, $matches ) ) {
@@ -227,7 +293,9 @@ class WpHookExtractor {
 			if ( preg_match( '#@([^ ]+)(.*)#', $line, $matches ) ) {
 				$tag_name = $matches[1] . 's';
 				$tag_value = \trim( $matches[2] );
-
+				if ( ! $tag_value ) {
+					continue;
+				}
 				// If this tag was already parsed, make its value an array.
 				if ( isset( $tags[ $tag_name ] ) ) {
 					$tags[ $tag_name ][] = array( $tag_value );
@@ -238,6 +306,17 @@ class WpHookExtractor {
 			}
 
 			$comment .= "$line\n";
+		}
+
+		// Handle any remaining example at the end.
+		if ( null !== $current_example ) {
+			if ( ! isset( $tags['examples'] ) ) {
+				$tags['examples'] = array();
+			}
+			$tags['examples'][] = array(
+				'title'   => $current_example,
+				'content' => trim( $example_content ),
+			);
 		}
 		if ( ! isset( $tags['params'] ) ) {
 			$tags['params'] = array();
@@ -271,7 +350,7 @@ class WpHookExtractor {
 			RecursiveIteratorIterator::LEAVES_ONLY
 		);
 		$b = strlen( $base_path ) + 1;
-		$filters = array();
+		$hooks = array();
 		foreach ( $files as $file ) {
 			if ( $file->getExtension() !== 'php' ) {
 				continue;
@@ -285,43 +364,46 @@ class WpHookExtractor {
 				continue;
 			}
 
-			$file_filters = $this->extract_hooks_from_file( $file->getPathname(), $dir );
+			$file_hooks = $this->extract_hooks_from_file( $file->getPathname(), $dir );
 
-			// Merge results with existing filters.
-			foreach ( $file_filters as $hook => $data ) {
-				if ( ! isset( $filters[ $hook ] ) ) {
-					$filters[ $hook ] = $data;
+			// Merge results with existing hooks.
+			foreach ( $file_hooks as $hook => $data ) {
+				if ( ! isset( $hooks[ $hook ] ) ) {
+					$hooks[ $hook ] = $data;
 				} else {
-					$filters[ $hook ]['files'] = array_merge( $filters[ $hook ]['files'], $data['files'] );
-					$filters[ $hook ]['params'] = array_merge_recursive( $filters[ $hook ]['params'], $data['params'] );
+					$hooks[ $hook ]['files'] = array_merge( $hooks[ $hook ]['files'], $data['files'] );
+					$hooks[ $hook ]['params'] = array_merge_recursive( $hooks[ $hook ]['params'], $data['params'] );
 					if ( ! empty( $data['comment'] ) ) {
-						$filters[ $hook ]['comment'] = $data['comment'];
+						$hooks[ $hook ]['comment'] = $data['comment'];
 					}
 				}
 			}
 		}
 
 		uksort(
-			$filters,
-			function ( $a, $b ) use ( $filters ) {
-				if ( $filters[ $a ]['section'] === $filters[ $b ]['section'] ) {
+			$hooks,
+			function ( $a, $b ) use ( $hooks ) {
+				if ( $hooks[ $a ]['section'] === $hooks[ $b ]['section'] ) {
 					return $a < $b ? -1 : 1;
 				}
-				return $filters[ $a ]['section'] < $filters[ $b ]['section'] ? -1 : 1;
+				return $hooks[ $a ]['section'] < $hooks[ $b ]['section'] ? -1 : 1;
 			}
 		);
 
-		return $filters;
+		return $hooks;
 	}
 
-	public function generate_documentation( $filters, $docs_path, $github_blob_url ) {
-		if ( ! file_exists( $docs_path ) ) {
-			mkdir( $docs_path, 0777, true );
-		}
+	public function generate_documentation( $hooks, $docs_path, $github_blob_url ) {
+		$documentation = $this->create_documentation_content( $hooks, $github_blob_url );
+		$this->write_documentation( $documentation, $docs_path );
+	}
 
+	public function create_documentation_content( $hooks, $github_blob_url ) {
 		$index = '';
 		$section = '';
-		foreach ( $filters as $hook => $data ) {
+		$hook_docs = array();
+
+		foreach ( $hooks as $hook => $data ) {
 			if ( $section !== $data['section'] ) {
 				$section = $data['section'];
 				$index .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
@@ -331,8 +413,19 @@ class WpHookExtractor {
 			$index .= "- [`$hook`]($hook)";
 			if ( ! empty( $data['comment'] ) ) {
 				$index .= ' ' . strtok( $data['comment'], PHP_EOL );
-				$has_example = preg_match( '/^Example:?$/m', $data['comment'] );
-				$doc .= PHP_EOL . preg_replace( '/^Example:?$/m', '## Example' . PHP_EOL, $data['comment'] ) . PHP_EOL . PHP_EOL;
+				$doc .= PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
+			}
+
+			// Handle examples (both @example tags and Example: patterns).
+			if ( ! empty( $data['examples'] ) ) {
+				$has_example = true;
+				foreach ( $data['examples'] as $example ) {
+					$doc .= '## Example' . PHP_EOL . PHP_EOL;
+					if ( ! empty( $example['title'] ) ) {
+						$doc .= $example['title'] . PHP_EOL . PHP_EOL;
+					}
+					$doc .= $example['content'] . PHP_EOL . PHP_EOL;
+				}
 			}
 
 			$index .= PHP_EOL;
@@ -367,7 +460,7 @@ class WpHookExtractor {
 							$var = preg_replace( '/(isset)?\([^)]*\)/', ' ', $var );
 							$var = preg_replace( '/\b(\d+|true|false|array)\b/', ' ', $var );
 							$var = preg_replace( '/^\w+::/', '', $var );
-							$var = preg_replace( '/[^a-z0-9_-]/i', ' ', $var );
+							$var = preg_replace( '/[^a-z0-9_>-]/i', ' ', $var );
 							$var = strtolower( preg_replace( '/([a-z])\s*([A-Z])/', '$1_$2', $var ) );
 							$var = preg_replace( '/^get_/', '', $var );
 							$var = preg_replace( '/\s+/', '_', trim( $var ) );
@@ -487,6 +580,9 @@ class WpHookExtractor {
 				} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 					$p[0] = $this->config['namespace'] . '\\' . $p[0];
 				}
+				if ( ! isset( $p[1] ) ) {
+					$p[1] = '';
+				}
 				$doc .= "\n`{$p[0]}` {$p[1]}";
 
 				$doc .= PHP_EOL . PHP_EOL;
@@ -499,14 +595,30 @@ class WpHookExtractor {
 			}
 			$doc .= "\n\n[← All Hooks](Hooks)\n";
 
+			$hook_docs[ $hook ] = $doc;
+		}
+
+		return array(
+			'index' => $index,
+			'hooks' => $hook_docs,
+		);
+	}
+
+	public function write_documentation( $documentation, $docs_path ) {
+		if ( ! file_exists( $docs_path ) ) {
+			mkdir( $docs_path, 0777, true );
+		}
+
+		foreach ( $documentation['hooks'] as $hook => $content ) {
 			file_put_contents(
 				$docs_path . "/$hook.md",
-				$doc
+				$content
 			);
 		}
+
 		file_put_contents(
 			$docs_path . '/Hooks.md',
-			$index
+			$documentation['index']
 		);
 	}
 

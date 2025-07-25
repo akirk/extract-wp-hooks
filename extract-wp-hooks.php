@@ -47,16 +47,15 @@ if ( empty( $config['namespace'] ) ) {
 	$config['namespace'] = '';
 }
 
-// Set base directory
 $base = isset( $config['base_dir'] ) ? $config['base_dir'] : getcwd();
-if ( $base === '.' ) {
+if ( '.' === $base ) {
 	$base = getcwd();
 }
 
 echo 'Scanning ', $base, PHP_EOL;
 $extractor = new WpHookExtractor( $config );
-$filters = $extractor->scan_directory( $base );
+$hooks = $extractor->scan_directory( $base );
 
-$extractor->generate_documentation( $filters, $base . '/' . $config['wiki_directory'], $config['github_blob_url'] );
+$extractor->generate_documentation( $hooks, $base . '/' . $config['wiki_directory'], $config['github_blob_url'] );
 
-echo 'Generated ' . count( $filters ) . ' hooks documentation files in ' . realpath( $base . '/' . $config['wiki_directory'] ) . PHP_EOL;
+echo 'Generated ' . count( $hooks ) . ' hooks documentation files in ' . realpath( $base . '/' . $config['wiki_directory'] ) . PHP_EOL;
