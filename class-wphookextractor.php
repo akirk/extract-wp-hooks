@@ -12,7 +12,7 @@ class WpHookExtractor {
 				'ignore_regex'  => false,
 				'section'       => 'file',
 				'namespace'     => '',
-				'example_style' => 'default', // or prefixed
+				'example_style' => 'default',
 			),
 			$config
 		);
@@ -569,9 +569,9 @@ class WpHookExtractor {
 						$signature .= ' );';
 						break;
 					default:
-						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '' . '    function(';
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
 						if ( count( $signature_params ) === 1 ) {
-							$signature .= ' '.  $signature_params[0] . ' ) {';
+							$signature .= ' ' .  $signature_params[0] . ' ) {';
 						} elseif ( count( $signature_params ) > 2 ) {
 							$signature .= PHP_EOL . '        ';
 							$signature .= implode( ',' . PHP_EOL . '        ', $signature_params ) . PHP_EOL . '    ) {';
