@@ -17,3 +17,4 @@ function my_complex_hook_callback(
     return $setting;
 }
 ```
+

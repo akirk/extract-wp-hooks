@@ -16,3 +16,4 @@ function my_two_param_hook_callback(
     return $first;
 }
 ```
+

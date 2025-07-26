@@ -2,14 +2,14 @@
 
 ```php
 add_filter(
-   'multi_param_hook',
+   'complex_hook_invalid_comment',
     function(
-        $param1,
-        $param2,
-        $extra_data
+        $setting,
+        $ID,
+        array $string_list
     ) {
         // Your code here.
-        return $param1;
+        return $setting;
     },
     10,
     3

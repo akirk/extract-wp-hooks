@@ -11,3 +11,4 @@ function my_simple_hook_callback( $value ) {
     return $value;
 }
 ```
+
