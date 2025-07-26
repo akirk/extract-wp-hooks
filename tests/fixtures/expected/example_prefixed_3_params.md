@@ -17,3 +17,4 @@ function my_multi_param_hook_callback(
     return $param1;
 }
 ```
+

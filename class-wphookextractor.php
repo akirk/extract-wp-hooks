@@ -34,18 +34,23 @@ class WpHookExtractor {
 			$comment = '';
 			$hook = false;
 			$l = max( 0, $i - 50 );
+			$found_significant_token = false;
 			for ( $j = $i; $j > $l; $j-- ) {
 				if ( ! is_array( $tokens[ $j ] ) ) {
 					continue;
 				}
 
-				if ( T_DOC_COMMENT === $tokens[ $j ][0] ) {
-					$comment = $tokens[ $j ][1];
+				// Check for significant tokens that would indicate the comment is not immediately before the hook.
+				if ( in_array( $tokens[ $j ][0], array( T_FUNCTION, T_CLASS, T_INTERFACE, T_TRAIT ), true ) ) {
+					$found_significant_token = true;
 					break;
 				}
 
-				if ( T_COMMENT === $tokens[ $j ][0] ) {
-					$comment = $tokens[ $j ][1];
+				if ( T_DOC_COMMENT === $tokens[ $j ][0] ) {
+					// Only use the comment if we haven't found any significant tokens between it and the hook.
+					if ( ! $found_significant_token ) {
+						$comment = $tokens[ $j ][1];
+					}
 					break;
 				}
 			}
@@ -168,7 +173,7 @@ class WpHookExtractor {
 		return array( $params, $signature );
 	}
 
-	public function parse_docblock( $raw_comment, $params ) {
+	private function parse_docblock( $raw_comment, $params ) {
 		if ( preg_match( '#^([ \t]*\*\s*|//\s*)?Documented (in|at) #m', $raw_comment ) ) {
 			return array();
 		}

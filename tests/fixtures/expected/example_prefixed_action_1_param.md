@@ -10,3 +10,4 @@ function my_one_param_hook_callback( $param1 ) {
     // Your code here.
 }
 ```
+

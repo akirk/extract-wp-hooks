@@ -1,16 +1,16 @@
 <?php
+$setting = get_option( 'setting' );
+
 /**
- * Complex parameter test with docblock
+ * Filter the complex hook with proper parameter documentation.
  *
  * @param string $setting The setting value
  * @param int    $user_id The user ID
  * @param array  $options Additional options
  */
-function test_complex() {
-	return apply_filters(
-		'complex_hook',
-		get_option( 'setting' ),
-		$user->ID,
-		array( 'key' => 'value' )
-	);
-}
+return apply_filters(
+	'complex_hook',
+	$setting,
+	$user->ID,
+	array( 'key' => 'value' )
+);
