@@ -20,7 +20,7 @@ class ExampleStyleTest extends TestCase {
 			file_put_contents( $expected_file_path, $actual_content );
 			echo "Updated fixture: " . basename( $expected_file_path ) . "\n";
 		}
-		$this->assertStringEqualsFileOrWrite( $expected_file_path, $actual_content );
+		return $this->assertStringEqualsFile( $expected_file_path, $actual_content );
 	}
 
 	public function test_default_example_style_0_params() {
