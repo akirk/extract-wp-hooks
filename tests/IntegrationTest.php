@@ -45,6 +45,11 @@ class IntegrationTest extends TestCase {
 		$this->assertCount( 1, $hook['examples'] );
 		$this->assertStringContainsString( 'add_filter', $hook['examples'][0]['content'] );
 		$this->assertStringContainsString( 'my_filter_function', $hook['examples'][0]['content'] );
+		$this->assertStringEqualsFile(
+			 __DIR__ . '/fixtures/expected/example_default_docblock_example_word_only.md',
+			'## Example' . PHP_EOL . PHP_EOL . $hook['examples'][0]['content']
+		);
+
 	}
 
 	public function test_complex_parameter_extraction() {

@@ -126,10 +126,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['multi_param_hook']['example'];
-		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_3_params.md' );
-
-		$this->assertEquals( trim( $expected ), trim( $example_section ) );
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/example_prefixed_3_params.md', $documentation['hooks']['multi_param_hook']['example'] );
 	}
 
 	public function test_example_style_does_not_affect_existing_examples() {
@@ -242,10 +239,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['zero_param_hook']['example'];
-		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_action_0_params.md' );
-
-		$this->assertEquals( trim( $expected ), trim( $example_section ) );
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/example_prefixed_action_0_params.md', $documentation['hooks']['zero_param_hook']['example'] );
 	}
 
 	public function test_prefixed_example_style_action_1_param() {
