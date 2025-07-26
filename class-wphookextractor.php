@@ -579,7 +579,7 @@ class WpHookExtractor {
 					} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 						$p[0] = $this->config['namespace'] . '\\' . $p[0];
 					}
-					// Determine if this parameter should be optional (not used consistently across all files)
+					// Determine if this parameter should be optional (not used consistently across all files).
 					$is_optional = $i >= $consistent_param_count;
 
 					if ( 'unknown' === $p[0] ) {

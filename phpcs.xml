@@ -28,6 +28,14 @@
 		<exclude-pattern>tests/*</exclude-pattern>
 	</rule>
 
+	<rule ref="WordPress.Files.FileName.NotHyphenatedLowercase">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
+		<exclude-pattern>tests/*</exclude-pattern>
+	</rule>
+
 	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
 		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
 		<exclude-pattern>tests/bootstrap.php</exclude-pattern>
