@@ -433,7 +433,7 @@ class WpHookExtractor {
 
 			$index .= PHP_EOL;
 
-			// Determine hook type regardless of parameters
+			// Determine hook type regardless of parameters.
 			if ( 'do_action' === $data['type'] ) {
 				$hook_type = 'action';
 				$hook_function = 'add_action';
@@ -444,7 +444,7 @@ class WpHookExtractor {
 
 			$count = 0;
 			$signature_params = array();
-			
+
 			if ( ! empty( $data['params'] ) ) {
 				$params = "## Parameters\n";
 				foreach ( $data['params'] as $i => $vars ) {
@@ -558,7 +558,7 @@ class WpHookExtractor {
 						$callback_name = 'my_' . $hook . '_callback';
 						$function_signature = "function {$callback_name}(";
 						if ( count( $signature_params ) === 0 ) {
-							$function_signature .= ") {";
+							$function_signature .= ') {';
 						} elseif ( count( $signature_params ) === 1 ) {
 							$function_signature .= ' ' . $signature_params[0] . ' ) {';
 						} else {
@@ -568,10 +568,10 @@ class WpHookExtractor {
 						$function_signature .= "\n    // Your code here.";
 						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
 							$first_param = explode( ' ', $signature_params[0] );
-							$function_signature .= "\n    return " . end( $first_param ) . ";";
+							$function_signature .= "\n    return " . end( $first_param ) . ';';
 						}
 						$function_signature .= "\n}";
-						
+
 						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
 						if ( $count > 1 ) {
 							$signature .= ",\n    10,\n    {$count}";
@@ -606,7 +606,7 @@ class WpHookExtractor {
 				$doc_sections['parameters'] = $params . PHP_EOL . PHP_EOL;
 			}
 
-			// Generate example even for hooks without parameters
+			// Generate example even for hooks without parameters.
 			if ( ! $has_example ) {
 				// Generate signature based on format.
 				switch ( $this->config['example_style'] ) {
@@ -614,7 +614,7 @@ class WpHookExtractor {
 						$callback_name = 'my_' . $hook . '_callback';
 						$function_signature = "function {$callback_name}(";
 						if ( count( $signature_params ) === 0 ) {
-							$function_signature .= ") {";
+							$function_signature .= ') {';
 						} elseif ( count( $signature_params ) === 1 ) {
 							$function_signature .= ' ' . $signature_params[0] . ' ) {';
 						} else {
@@ -624,10 +624,10 @@ class WpHookExtractor {
 						$function_signature .= "\n    // Your code here.";
 						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
 							$first_param = explode( ' ', $signature_params[0] );
-							$function_signature .= "\n    return " . end( $first_param ) . ";";
+							$function_signature .= "\n    return " . end( $first_param ) . ';';
 						}
 						$function_signature .= "\n}";
-						
+
 						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
 						if ( $count > 1 ) {
 							$signature .= ",\n    10,\n    {$count}";
@@ -686,7 +686,7 @@ class WpHookExtractor {
 			$files_content .= "\n\n[← All Hooks](Hooks)\n";
 			$doc_sections['files'] = $files_content;
 
-			// Combine sections in desired order
+			// Combine sections in desired order.
 			$doc = '';
 			$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
 			foreach ( $section_order as $section_key ) {
