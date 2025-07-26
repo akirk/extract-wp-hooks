@@ -14,7 +14,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['zero_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['zero_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_0_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -30,7 +30,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['zero_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['zero_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_0_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -46,7 +46,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['simple_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['simple_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_style.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -62,7 +62,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['simple_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['simple_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_style.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -78,7 +78,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['two_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['two_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_2_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -94,7 +94,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['two_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['two_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_2_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -110,7 +110,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['multi_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['multi_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_3_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -126,7 +126,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['multi_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['multi_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_3_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -142,7 +142,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['user_data_filter']['sections']['example'];
+		$example_section = $documentation['hooks']['user_data_filter']['example'];
 
 		// Should contain the original example from the docblock.
 		$this->assertStringContainsString( '## Example', $example_section );
@@ -161,7 +161,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['simple_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['simple_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_style.md' );
 
 		// Should fall back to default style.
@@ -178,7 +178,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['zero_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['zero_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_action_0_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -194,7 +194,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['one_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['one_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_action_1_param.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -210,7 +210,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['two_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['two_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_action_2_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -226,7 +226,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['three_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['three_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_action_3_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -242,7 +242,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['zero_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['zero_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_action_0_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -258,7 +258,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['one_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['one_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_action_1_param.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -274,7 +274,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['two_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['two_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_action_2_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -290,7 +290,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['three_param_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['three_param_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_action_3_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -306,7 +306,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['complex_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['complex_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_default_complex_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );
@@ -322,7 +322,7 @@ class ExampleStyleTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$example_section = $documentation['hooks']['complex_hook']['sections']['example'];
+		$example_section = $documentation['hooks']['complex_hook']['example'];
 		$expected = file_get_contents( __DIR__ . '/fixtures/expected/example_prefixed_complex_params.md' );
 
 		$this->assertEquals( trim( $expected ), trim( $example_section ) );

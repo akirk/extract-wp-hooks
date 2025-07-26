@@ -409,12 +409,12 @@ class WpHookExtractor {
 				$section = $data['section'];
 				$index .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
 			}
-			$doc_sections = array();
+			$sections = array();
 			$has_example = false;
 			$index .= "- [`$hook`]($hook)";
 			if ( ! empty( $data['comment'] ) ) {
 				$index .= ' ' . strtok( $data['comment'], PHP_EOL );
-				$doc_sections['description'] = PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
+				$sections['description'] = PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
 			}
 
 			// Handle examples (both @example tags and Example: patterns).
@@ -428,7 +428,7 @@ class WpHookExtractor {
 					}
 					$example_content .= $example['content'] . PHP_EOL . PHP_EOL;
 				}
-				$doc_sections['example'] = $example_content;
+				$sections['example'] = $example_content;
 			}
 
 			$index .= PHP_EOL;
@@ -603,7 +603,7 @@ class WpHookExtractor {
 						$signature .= ');';
 						break;
 				}
-				$doc_sections['parameters'] = $params . PHP_EOL . PHP_EOL;
+				$sections['parameters'] = $params . PHP_EOL . PHP_EOL;
 			}
 
 			// Generate example even for hooks without parameters.
@@ -659,7 +659,7 @@ class WpHookExtractor {
 						$signature .= ');';
 						break;
 				}
-				$doc_sections['example'] = '## Auto-generated Example' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+				$sections['example'] = '## Auto-generated Example' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 			}
 
 			if ( ! empty( $data['returns'] ) ) {
@@ -675,7 +675,7 @@ class WpHookExtractor {
 				}
 				$returns_content .= "\n`{$p[0]}` {$p[1]}";
 				$returns_content .= PHP_EOL . PHP_EOL;
-				$doc_sections['returns'] = $returns_content;
+				$sections['returns'] = $returns_content;
 			}
 
 			$files_content = "## Files\n\n";
@@ -684,21 +684,9 @@ class WpHookExtractor {
 				$files_content .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 			}
 			$files_content .= "\n\n[← All Hooks](Hooks)\n";
-			$doc_sections['files'] = $files_content;
+			$sections['files'] = $files_content;
 
-			// Combine sections in desired order.
-			$doc = '';
-			$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
-			foreach ( $section_order as $section_key ) {
-				if ( isset( $doc_sections[ $section_key ] ) ) {
-					$doc .= $doc_sections[ $section_key ];
-				}
-			}
-
-			$hook_docs[ $hook ] = array(
-				'sections' => $doc_sections,
-				'content'  => $doc,
-			);
+			$hook_docs[ $hook ] = $sections;
 		}
 
 		return array(
@@ -712,11 +700,16 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true );
 		}
 
-		foreach ( $documentation['hooks'] as $hook => $hook_data ) {
-			file_put_contents(
-				$docs_path . "/$hook.md",
-				$hook_data['content']
-			);
+		$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
+
+		foreach ( $documentation['hooks'] as $hook => $sections ) {
+			$doc = '';
+			foreach ( $section_order as $section_key ) {
+				if ( isset( $sections[ $section_key ] ) ) {
+					$doc .= $sections[ $section_key ];
+				}
+			}
+			file_put_contents( $docs_path . "/$hook.md", $doc );
 		}
 
 		file_put_contents(

@@ -98,11 +98,11 @@ class IntegrationTest extends TestCase {
 		$this->assertStringContainsString( '## simple_filter.php', $index );
 		$this->assertStringContainsString( '- [`simple_hook`](simple_hook)', $index );
 
-		$hook_content = $documentation['hooks']['simple_hook']['content'];
-		$this->assertStringContainsString( '## Parameters', $hook_content );
-		$this->assertStringContainsString( 'add_filter(', $hook_content );
-		$this->assertStringContainsString( '## Files', $hook_content );
-		$this->assertStringContainsString( '[simple_filter.php:7](' . $github_blob_url . 'simple_filter.php#L7)', $hook_content );
+		$this->assertArrayHasKey( 'example', $documentation['hooks']['simple_hook'] );
+		$this->assertArrayHasKey( 'parameters', $documentation['hooks']['simple_hook'] );
+		$this->assertArrayHasKey( 'files', $documentation['hooks']['simple_hook'] );
+		$this->assertStringContainsString( 'add_filter(', $documentation['hooks']['simple_hook']['example'] );
+		$this->assertStringContainsString( '[simple_filter.php:7](' . $github_blob_url . 'simple_filter.php#L7)', $documentation['hooks']['simple_hook']['files'] );
 	}
 
 	public function test_create_documentation_content_with_example() {
@@ -113,11 +113,13 @@ class IntegrationTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$hook_content = $documentation['hooks']['user_data_filter']['content'];
-		$this->assertStringContainsString( '## Example', $hook_content );
-		$this->assertStringContainsString( 'add_filter', $hook_content );
-		$this->assertStringContainsString( 'last_modified', $hook_content );
-		$this->assertStringNotContainsString( '## Auto-generated Example', $hook_content );
+		$this->assertArrayHasKey( 'user_data_filter', $documentation['hooks'] );
+		$this->assertArrayHasKey( 'example', $documentation['hooks']['user_data_filter'] );
+		$this->assertArrayHasKey( 'parameters', $documentation['hooks']['user_data_filter'] );
+		$this->assertArrayHasKey( 'files', $documentation['hooks']['user_data_filter'] );
+		$this->assertStringContainsString( 'add_filter', $documentation['hooks']['user_data_filter']['example'] );
+		$this->assertStringContainsString( 'last_modified', $documentation['hooks']['user_data_filter']['example'] );
+		$this->assertStringNotContainsString( '## Auto-generated Example', $documentation['hooks']['user_data_filter']['example'] );
 	}
 
 	public function test_create_documentation_content_action_hook() {
@@ -128,9 +130,9 @@ class IntegrationTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$hook_content = $documentation['hooks']['test_action']['content'];
-		$this->assertStringContainsString( 'add_action(', $hook_content );
-		$this->assertStringNotContainsString( 'return $data;', $hook_content );
+		$this->assertArrayHasKey( 'test_action', $documentation['hooks'] );
+		$this->assertStringContainsString( 'add_action(', $documentation['hooks']['test_action']['example'] );
+		$this->assertStringNotContainsString( 'return $data;', $documentation['hooks']['test_action']['example'] );
 	}
 
 	public function test_create_documentation_content_with_example_tag() {
@@ -143,12 +145,12 @@ class IntegrationTest extends TestCase {
 
 		$this->assertArrayHasKey( 'gatherpress_pseudopostmetas', $documentation['hooks'] );
 
-		$hook_content = $documentation['hooks']['gatherpress_pseudopostmetas']['content'];
-		$this->assertStringContainsString( '## Example', $hook_content );
-		$this->assertStringContainsString( 'event-organiser', $hook_content );
-		$this->assertStringContainsString( 'add_filter', $hook_content );
-		$this->assertStringContainsString( 'export_callback', $hook_content );
-		$this->assertStringContainsString( 'import_callback', $hook_content );
-		$this->assertStringNotContainsString( '## Auto-generated Example', $hook_content );
+		$this->assertArrayHasKey( 'gatherpress_pseudopostmetas', $documentation['hooks'] );
+		$this->assertArrayHasKey( 'example', $documentation['hooks']['gatherpress_pseudopostmetas'] );
+		$this->assertStringContainsString( 'event-organiser', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
+		$this->assertStringContainsString( 'add_filter', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
+		$this->assertStringContainsString( 'export_callback', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
+		$this->assertStringContainsString( 'import_callback', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
+		$this->assertStringNotContainsString( '## Auto-generated Example', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
 	}
 }
