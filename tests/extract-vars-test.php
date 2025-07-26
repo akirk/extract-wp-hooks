@@ -1,9 +1,6 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
-class ExtractVarsTest extends TestCase {
-
+class ExtractVarsTest extends WpHookExtractor_Testcase {
 	private function find_hook_token_index( $tokens, $hook_function ) {
 		foreach ( $tokens as $i => $token ) {
 			if ( is_array( $token ) && $token[1] === $hook_function ) {

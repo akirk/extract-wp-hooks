@@ -2,13 +2,13 @@
 
 ```php
 add_action(
-   'two_param_hook',
-    'my_two_param_hook_callback',
+   'two_param_action_hook',
+    'my_two_param_action_hook_callback',
     10,
     2
 );
 
-function my_two_param_hook_callback(
+function my_two_param_action_hook_callback(
     $param1,
     $param2
 ) {

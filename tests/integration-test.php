@@ -1,9 +1,6 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
-class IntegrationTest extends TestCase {
-
+class IntegrationTest extends WpHookExtractor_Testcase {
 	public function test_example_code_extraction() {
 		$file_path = __DIR__ . '/fixtures/docblock_with_example.php';
 		$extractor = new WpHookExtractor();
@@ -45,7 +42,7 @@ class IntegrationTest extends TestCase {
 		$this->assertCount( 1, $hook['examples'] );
 		$this->assertStringContainsString( 'add_filter', $hook['examples'][0]['content'] );
 		$this->assertStringContainsString( 'my_filter_function', $hook['examples'][0]['content'] );
-		$this->assertStringEqualsFile(
+		$this->assertStringEqualsFileOrWrite(
 			__DIR__ . '/fixtures/expected/example_docblock_example_word_only.md',
 			'## Example' . PHP_EOL . PHP_EOL . $hook['examples'][0]['content'] . PHP_EOL
 		);
@@ -156,5 +153,19 @@ class IntegrationTest extends TestCase {
 		$this->assertStringContainsString( 'export_callback', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
 		$this->assertStringContainsString( 'import_callback', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
 		$this->assertStringNotContainsString( '## Auto-generated Example', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
+	}
+
+	public function test_action_multiple_files() {
+		$file_path = __DIR__ . '/fixtures/two_params_action.php';
+		$file_path2 = __DIR__ . '/fixtures/two_params_action_second_file.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+		$hooks = $extractor->merge_file_hooks( $hooks, $extractor->extract_hooks_from_file( $file_path2 ) );
+
+		$this->assertArrayHasKey( 'two_param_action_hook', $hooks );
+		$this->assertEquals( 'do_action', $hooks['two_param_action_hook']['type'] );
+
+		$this->assertCount( 2, $hooks['two_param_action_hook']['files'] );
+		$this->assertCount( 3, $hooks['two_param_action_hook']['params'] );
 	}
 }

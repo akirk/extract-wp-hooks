@@ -2,7 +2,7 @@
 
 ```php
 add_action(
-   'two_param_hook',
+   'two_param_action_hook',
     function(
         $param1,
         $param2

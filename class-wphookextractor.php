@@ -350,6 +350,37 @@ class WpHookExtractor {
 		return $ret;
 	}
 
+	public function merge_file_hooks( $hooks, $file_hooks ) {
+		// Merge results with existing hooks.
+		foreach ( $file_hooks as $hook => $data ) {
+			if ( ! isset( $hooks[ $hook ] ) ) {
+				$hooks[ $hook ] = $data;
+			} else {
+				$hooks[ $hook ]['files'] = array_merge( $hooks[ $hook ]['files'], $data['files'] );
+
+				// Merge parameters to show the maximum number across all files.
+				$merged_params = $hooks[ $hook ]['params'];
+				foreach ( $data['params'] as $index => $vars ) {
+					if ( isset( $merged_params[ $index ] ) ) {
+						// Merge variables for existing parameter index.
+						$merged_params[ $index ] = array_merge( $merged_params[ $index ], $vars );
+						$merged_params[ $index ] = array_unique( $merged_params[ $index ] );
+					} else {
+						// Add new parameter index.
+						$merged_params[ $index ] = $vars;
+					}
+				}
+				$hooks[ $hook ]['params'] = $merged_params;
+
+				if ( ! empty( $data['comment'] ) ) {
+					$hooks[ $hook ]['comment'] = $data['comment'];
+				}
+			}
+		}
+
+		return $hooks;
+	}
+
 	public function scan_directory( $base_path ) {
 		$files = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $base_path ),
@@ -371,19 +402,7 @@ class WpHookExtractor {
 			}
 
 			$file_hooks = $this->extract_hooks_from_file( $file->getPathname(), $dir );
-
-			// Merge results with existing hooks.
-			foreach ( $file_hooks as $hook => $data ) {
-				if ( ! isset( $hooks[ $hook ] ) ) {
-					$hooks[ $hook ] = $data;
-				} else {
-					$hooks[ $hook ]['files'] = array_merge( $hooks[ $hook ]['files'], $data['files'] );
-					$hooks[ $hook ]['params'] = array_merge_recursive( $hooks[ $hook ]['params'], $data['params'] );
-					if ( ! empty( $data['comment'] ) ) {
-						$hooks[ $hook ]['comment'] = $data['comment'];
-					}
-				}
-			}
+			$hooks = $this->merge_file_hooks( $hooks, $file_hooks );
 		}
 
 		uksort(
