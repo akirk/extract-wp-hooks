@@ -17,9 +17,6 @@
 	</rule>
 	<rule ref="WordPress-Docs" />
 
-	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
-		<exclude-pattern>tests/*</exclude-pattern>
-	</rule>
 
 	<rule ref="WordPress.Security.EscapeOutput.OutputNotEscaped">
 		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
