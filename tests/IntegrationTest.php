@@ -157,4 +157,19 @@ class IntegrationTest extends TestCase {
 		$this->assertStringContainsString( 'import_callback', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
 		$this->assertStringNotContainsString( '## Auto-generated Example', $documentation['hooks']['gatherpress_pseudopostmetas']['example'] );
 	}
+
+	public function test_action_multiple_files() {
+		$file_path = __DIR__ . '/fixtures/two_params_action.php';
+		$file_path2 = __DIR__ . '/fixtures/two_params_action_second_file.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+		$hooks = $extractor->merge_file_hooks( $hooks, $extractor->extract_hooks_from_file( $file_path2 ) );
+
+		$this->assertArrayHasKey( 'two_param_action_hook', $hooks );
+		$this->assertEquals( 'do_action', $hooks['two_param_action_hook']['type'] );
+
+		$this->assertCount( 2, $hooks['two_param_action_hook']['files'] );
+		$this->assertCount( 3, $hooks['two_param_action_hook']['params'] );
+
+	}
 }
