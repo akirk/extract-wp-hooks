@@ -170,6 +170,5 @@ class IntegrationTest extends TestCase {
 
 		$this->assertCount( 2, $hooks['two_param_action_hook']['files'] );
 		$this->assertCount( 3, $hooks['two_param_action_hook']['params'] );
-
 	}
 }

@@ -357,21 +357,21 @@ class WpHookExtractor {
 				$hooks[ $hook ] = $data;
 			} else {
 				$hooks[ $hook ]['files'] = array_merge( $hooks[ $hook ]['files'], $data['files'] );
-				
-				// Merge parameters to show the maximum number across all files
+
+				// Merge parameters to show the maximum number across all files.
 				$merged_params = $hooks[ $hook ]['params'];
 				foreach ( $data['params'] as $index => $vars ) {
 					if ( isset( $merged_params[ $index ] ) ) {
-						// Merge variables for existing parameter index
+						// Merge variables for existing parameter index.
 						$merged_params[ $index ] = array_merge( $merged_params[ $index ], $vars );
 						$merged_params[ $index ] = array_unique( $merged_params[ $index ] );
 					} else {
-						// Add new parameter index
+						// Add new parameter index.
 						$merged_params[ $index ] = $vars;
 					}
 				}
 				$hooks[ $hook ]['params'] = $merged_params;
-				
+
 				if ( ! empty( $data['comment'] ) ) {
 					$hooks[ $hook ]['comment'] = $data['comment'];
 				}

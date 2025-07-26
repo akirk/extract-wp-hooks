@@ -3,14 +3,6 @@
 use PHPUnit\Framework\TestCase;
 
 class ExampleStyleTest extends TestCase {
-
-	/**
-	 * Helper method to write expected fixture files during development.
-	 * Set UPDATE_FIXTURES environment variable to true to enable writing.
-	 *
-	 * @param string $expected_file_path Path to the expected fixture file
-	 * @param string $actual_content The content to write
-	 */
 	private function assertStringEqualsFileOrWrite( $expected_file_path, $actual_content ) {
 		if ( ! file_exists( $expected_file_path ) ) {
 			$dir = dirname( $expected_file_path );
@@ -18,7 +10,7 @@ class ExampleStyleTest extends TestCase {
 				mkdir( $dir, 0755, true );
 			}
 			file_put_contents( $expected_file_path, $actual_content );
-			echo "Updated fixture: " . basename( $expected_file_path ) . "\n";
+			file_put_contents( 'php://stderr', 'Updated fixture: ' . basename( $expected_file_path ) . "\n" );
 		}
 		return $this->assertStringEqualsFile( $expected_file_path, $actual_content );
 	}
