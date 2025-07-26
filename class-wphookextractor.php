@@ -468,9 +468,31 @@ class WpHookExtractor {
 
 			$count = 0;
 			$signature_params = array();
+			$consistent_param_count = 0;
 
 			if ( ! empty( $data['params'] ) ) {
 				$params = "## Parameters\n";
+
+				$file_count = count( $data['files'] );
+				foreach ( $data['params'] as $i => $vars ) {
+					$usage_count = 0;
+					foreach ( $data['files'] as $file_signature ) {
+						$parts = explode( "'" . $hook . "'", $file_signature );
+						if ( count( $parts ) > 1 ) {
+							$param_part = $parts[1];
+							$comma_count = substr_count( $param_part, ',' );
+							$file_param_count = $comma_count;
+							if ( $i < $file_param_count ) {
+								++$usage_count;
+							}
+						}
+					}
+
+					if ( $usage_count === $file_count ) {
+						$consistent_param_count = $i + 1;
+					}
+				}
+
 				foreach ( $data['params'] as $i => $vars ) {
 					$param = false;
 					foreach ( $vars as $k => $var ) {
@@ -557,9 +579,16 @@ class WpHookExtractor {
 					} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 						$p[0] = $this->config['namespace'] . '\\' . $p[0];
 					}
+					// Determine if this parameter should be optional (not used consistently across all files).
+					$is_optional = $i >= $consistent_param_count;
+
 					if ( 'unknown' === $p[0] ) {
 						$params .= "\n- `{$p[1]}`";
-						$signature_params[] = $p[1];
+						if ( $is_optional ) {
+							$signature_params[] = $p[1] . ' = null';
+						} else {
+							$signature_params[] = $p[1];
+						}
 						if ( isset( $p[2] ) ) {
 							$params .= ' ' . $p[2];
 						}
@@ -568,8 +597,12 @@ class WpHookExtractor {
 						if ( isset( $p[2] ) ) {
 							$params .= ' ' . $p[2];
 						}
-						if ( substr( $p[0], -5 ) === '|null' ) { // Remove this if, if you don't want to support PHP 7.4 or below.
-							$signature_params[] = substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null';
+						if ( substr( $p[0], -5 ) === '|null' || $is_optional ) {
+							if ( substr( $p[0], -5 ) === '|null' ) {
+								$signature_params[] = substr( $p[0], 0, -5 ) . ' ' . $p[1] . ' = null';
+							} else {
+								$signature_params[] = "{$p[0]} {$p[1]} = null";
+							}
 						} else {
 							$signature_params[] = "{$p[0]} {$p[1]}";
 						}
@@ -597,8 +630,8 @@ class WpHookExtractor {
 						$function_signature .= "\n}";
 
 						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
-						if ( $count > 1 ) {
-							$signature .= ",\n    10,\n    {$count}";
+						if ( $consistent_param_count > 1 ) {
+							$signature .= ",\n    10,\n    {$consistent_param_count}";
 						}
 						$signature .= "\n);\n\n{$function_signature}";
 						break;
@@ -619,8 +652,8 @@ class WpHookExtractor {
 						}
 						$signature .= PHP_EOL . '    }';
 
-						if ( $count > 1 ) {
-							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $count . PHP_EOL;
+						if ( $consistent_param_count > 1 ) {
+							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $consistent_param_count . PHP_EOL;
 						} else {
 							$signature .= PHP_EOL;
 						}
@@ -653,8 +686,8 @@ class WpHookExtractor {
 						$function_signature .= "\n}";
 
 						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
-						if ( $count > 1 ) {
-							$signature .= ",\n    10,\n    {$count}";
+						if ( $consistent_param_count > 1 ) {
+							$signature .= ",\n    10,\n    {$consistent_param_count}";
 						}
 						$signature .= "\n);\n\n{$function_signature}";
 						break;
@@ -675,8 +708,8 @@ class WpHookExtractor {
 						}
 						$signature .= PHP_EOL . '    }';
 
-						if ( $count > 1 ) {
-							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $count . PHP_EOL;
+						if ( $consistent_param_count > 1 ) {
+							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $consistent_param_count . PHP_EOL;
 						} else {
 							$signature .= PHP_EOL;
 						}
