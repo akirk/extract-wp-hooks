@@ -40,22 +40,14 @@ class WpHookExtractor {
 					continue;
 				}
 
-				// Check for significant tokens that would indicate the comment is not immediately before the hook
+				// Check for significant tokens that would indicate the comment is not immediately before the hook.
 				if ( in_array( $tokens[ $j ][0], array( T_FUNCTION, T_CLASS, T_INTERFACE, T_TRAIT ), true ) ) {
 					$found_significant_token = true;
 					break;
 				}
 
 				if ( T_DOC_COMMENT === $tokens[ $j ][0] ) {
-					// Only use the comment if we haven't found any significant tokens between it and the hook
-					if ( ! $found_significant_token ) {
-						$comment = $tokens[ $j ][1];
-					}
-					break;
-				}
-
-				if ( T_COMMENT === $tokens[ $j ][0] ) {
-					// Only use the comment if we haven't found any significant tokens between it and the hook
+					// Only use the comment if we haven't found any significant tokens between it and the hook.
 					if ( ! $found_significant_token ) {
 						$comment = $tokens[ $j ][1];
 					}
