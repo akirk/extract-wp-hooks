@@ -33,7 +33,7 @@ class WpHookExtractor {
 
 			$comment = '';
 			$hook = false;
-			$l = max( 0, $i - 10 );
+			$l = max( 0, $i - 50 );
 			for ( $j = $i; $j > $l; $j-- ) {
 				if ( ! is_array( $tokens[ $j ] ) ) {
 					continue;
@@ -409,41 +409,44 @@ class WpHookExtractor {
 				$section = $data['section'];
 				$index .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
 			}
-			$doc = '';
+			$doc_sections = array();
 			$has_example = false;
 			$index .= "- [`$hook`]($hook)";
 			if ( ! empty( $data['comment'] ) ) {
 				$index .= ' ' . strtok( $data['comment'], PHP_EOL );
-				$doc .= PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
+				$doc_sections['description'] = PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
 			}
 
 			// Handle examples (both @example tags and Example: patterns).
 			if ( ! empty( $data['examples'] ) ) {
 				$has_example = true;
+				$example_content = '';
 				foreach ( $data['examples'] as $example ) {
-					$doc .= '## Example' . PHP_EOL . PHP_EOL;
+					$example_content .= '## Example' . PHP_EOL . PHP_EOL;
 					if ( ! empty( $example['title'] ) ) {
-						$doc .= $example['title'] . PHP_EOL . PHP_EOL;
+						$example_content .= $example['title'] . PHP_EOL . PHP_EOL;
 					}
-					$doc .= $example['content'] . PHP_EOL . PHP_EOL;
+					$example_content .= $example['content'] . PHP_EOL . PHP_EOL;
 				}
+				$doc_sections['example'] = $example_content;
 			}
 
 			$index .= PHP_EOL;
 
-			if ( ! empty( $data['params'] ) ) {
-				if ( 'do_action' === $data['type'] ) {
-					$hook_type = 'action';
-					$hook_function = 'add_action';
-				} else {
-					$hook_type = 'filter';
-					$hook_function = 'add_filter';
-				}
+			// Determine hook type regardless of parameters
+			if ( 'do_action' === $data['type'] ) {
+				$hook_type = 'action';
+				$hook_function = 'add_action';
+			} else {
+				$hook_type = 'filter';
+				$hook_function = 'add_filter';
+			}
 
+			$count = 0;
+			$signature_params = array();
+			
+			if ( ! empty( $data['params'] ) ) {
 				$params = "## Parameters\n";
-				$first = false;
-				$count = 0;
-				$signature_params = array();
 				foreach ( $data['params'] as $i => $vars ) {
 					$param = false;
 					foreach ( $vars as $k => $var ) {
@@ -530,9 +533,6 @@ class WpHookExtractor {
 					} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
 						$p[0] = $this->config['namespace'] . '\\' . $p[0];
 					}
-					if ( ! $first ) {
-						$first = $p[1];
-					}
 					if ( 'unknown' === $p[0] ) {
 						$params .= "\n- `{$p[1]}`";
 						$signature_params[] = $p[1];
@@ -555,30 +555,43 @@ class WpHookExtractor {
 				// Generate signature based on format.
 				switch ( $this->config['example_style'] ) {
 					case 'prefixed':
-						$signature = "function prefixed_{$hook_type}_callback( ";
-						$signature .= implode( ', ', $signature_params ) . ' ) {';
-						$signature .= PHP_EOL . '    // Your code here.';
-						if ( 'action' !== $hook_type ) {
-							$signature .= PHP_EOL . '    return ' . $first . ';';
+						$callback_name = 'my_' . $hook . '_callback';
+						$function_signature = "function {$callback_name}(";
+						if ( count( $signature_params ) === 0 ) {
+							$function_signature .= ") {";
+						} elseif ( count( $signature_params ) === 1 ) {
+							$function_signature .= ' ' . $signature_params[0] . ' ) {';
+						} else {
+							$function_signature .= "\n    ";
+							$function_signature .= implode( ",\n    ", $signature_params ) . "\n) {";
 						}
-						$signature .= PHP_EOL . '}';
-						$signature .= PHP_EOL . $hook_function . "( '{$hook}', 'prefixed_{$hook_type}_callback'";
+						$function_signature .= "\n    // Your code here.";
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$function_signature .= "\n    return " . end( $first_param ) . ";";
+						}
+						$function_signature .= "\n}";
+						
+						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
 						if ( $count > 1 ) {
-							$signature .= ', 10, ' . $count;
+							$signature .= ",\n    10,\n    {$count}";
 						}
-						$signature .= ' );';
+						$signature .= "\n);\n\n{$function_signature}";
 						break;
 					default:
 						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
 						if ( count( $signature_params ) === 1 ) {
 							$signature .= ' ' . $signature_params[0] . ' ) {';
-						} elseif ( count( $signature_params ) > 2 ) {
+						} elseif ( count( $signature_params ) > 1 ) {
 							$signature .= PHP_EOL . '        ';
 							$signature .= implode( ',' . PHP_EOL . '        ', $signature_params ) . PHP_EOL . '    ) {';
+						} else {
+							$signature .= ') {';
 						}
 						$signature .= PHP_EOL . '        // Your code here.';
-						if ( 'action' !== $hook_type ) {
-							$signature .= PHP_EOL . '        return ' . $first . ';';
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$signature .= PHP_EOL . '        return ' . end( $first_param ) . ';';
 						}
 						$signature .= PHP_EOL . '    }';
 
@@ -586,19 +599,71 @@ class WpHookExtractor {
 							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $count . PHP_EOL;
 						} else {
 							$signature .= PHP_EOL;
-
 						}
 						$signature .= ');';
 						break;
 				}
-				if ( ! $has_example ) {
-					$doc .= '## Auto-generated Example' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+				$doc_sections['parameters'] = $params . PHP_EOL . PHP_EOL;
+			}
+
+			// Generate example even for hooks without parameters
+			if ( ! $has_example ) {
+				// Generate signature based on format.
+				switch ( $this->config['example_style'] ) {
+					case 'prefixed':
+						$callback_name = 'my_' . $hook . '_callback';
+						$function_signature = "function {$callback_name}(";
+						if ( count( $signature_params ) === 0 ) {
+							$function_signature .= ") {";
+						} elseif ( count( $signature_params ) === 1 ) {
+							$function_signature .= ' ' . $signature_params[0] . ' ) {';
+						} else {
+							$function_signature .= "\n    ";
+							$function_signature .= implode( ",\n    ", $signature_params ) . "\n) {";
+						}
+						$function_signature .= "\n    // Your code here.";
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$function_signature .= "\n    return " . end( $first_param ) . ";";
+						}
+						$function_signature .= "\n}";
+						
+						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
+						if ( $count > 1 ) {
+							$signature .= ",\n    10,\n    {$count}";
+						}
+						$signature .= "\n);\n\n{$function_signature}";
+						break;
+					default:
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
+						if ( count( $signature_params ) === 1 ) {
+							$signature .= ' ' . $signature_params[0] . ' ) {';
+						} elseif ( count( $signature_params ) > 1 ) {
+							$signature .= PHP_EOL . '        ';
+							$signature .= implode( ',' . PHP_EOL . '        ', $signature_params ) . PHP_EOL . '    ) {';
+						} else {
+							$signature .= ') {';
+						}
+						$signature .= PHP_EOL . '        // Your code here.';
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$signature .= PHP_EOL . '        return ' . end( $first_param ) . ';';
+						}
+						$signature .= PHP_EOL . '    }';
+
+						if ( $count > 1 ) {
+							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $count . PHP_EOL;
+						} else {
+							$signature .= PHP_EOL;
+						}
+						$signature .= ');';
+						break;
 				}
-				$doc .= $params . PHP_EOL . PHP_EOL;
+				$doc_sections['example'] = '## Auto-generated Example' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 			}
 
 			if ( ! empty( $data['returns'] ) ) {
-				$doc .= "## Returns\n";
+				$returns_content = "## Returns\n";
 				$p = preg_split( '/ +/', $data['returns'], 2 );
 				if ( '\\' === substr( $p[0], 0, 1 ) ) {
 					$p[0] = substr( $p[0], 1 );
@@ -608,19 +673,32 @@ class WpHookExtractor {
 				if ( ! isset( $p[1] ) ) {
 					$p[1] = '';
 				}
-				$doc .= "\n`{$p[0]}` {$p[1]}";
-
-				$doc .= PHP_EOL . PHP_EOL;
+				$returns_content .= "\n`{$p[0]}` {$p[1]}";
+				$returns_content .= PHP_EOL . PHP_EOL;
+				$doc_sections['returns'] = $returns_content;
 			}
 
-			$doc .= "## Files\n\n";
+			$files_content = "## Files\n\n";
 			foreach ( $data['files'] as $file => $signature ) {
-				$doc .= "- [$file](" . $github_blob_url . str_replace( ':', '#L', $file ) . ")\n";
-				$doc .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+				$files_content .= "- [$file](" . $github_blob_url . str_replace( ':', '#L', $file ) . ")\n";
+				$files_content .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 			}
-			$doc .= "\n\n[← All Hooks](Hooks)\n";
+			$files_content .= "\n\n[← All Hooks](Hooks)\n";
+			$doc_sections['files'] = $files_content;
 
-			$hook_docs[ $hook ] = $doc;
+			// Combine sections in desired order
+			$doc = '';
+			$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
+			foreach ( $section_order as $section_key ) {
+				if ( isset( $doc_sections[ $section_key ] ) ) {
+					$doc .= $doc_sections[ $section_key ];
+				}
+			}
+
+			$hook_docs[ $hook ] = array(
+				'sections' => $doc_sections,
+				'content'  => $doc,
+			);
 		}
 
 		return array(
@@ -634,10 +712,10 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true );
 		}
 
-		foreach ( $documentation['hooks'] as $hook => $content ) {
+		foreach ( $documentation['hooks'] as $hook => $hook_data ) {
 			file_put_contents(
 				$docs_path . "/$hook.md",
-				$content
+				$hook_data['content']
 			);
 		}
 

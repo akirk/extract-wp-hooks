@@ -98,7 +98,7 @@ class IntegrationTest extends TestCase {
 		$this->assertStringContainsString( '## simple_filter.php', $index );
 		$this->assertStringContainsString( '- [`simple_hook`](simple_hook)', $index );
 
-		$hook_content = $documentation['hooks']['simple_hook'];
+		$hook_content = $documentation['hooks']['simple_hook']['content'];
 		$this->assertStringContainsString( '## Parameters', $hook_content );
 		$this->assertStringContainsString( 'add_filter(', $hook_content );
 		$this->assertStringContainsString( '## Files', $hook_content );
@@ -113,7 +113,7 @@ class IntegrationTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$hook_content = $documentation['hooks']['user_data_filter'];
+		$hook_content = $documentation['hooks']['user_data_filter']['content'];
 		$this->assertStringContainsString( '## Example', $hook_content );
 		$this->assertStringContainsString( 'add_filter', $hook_content );
 		$this->assertStringContainsString( 'last_modified', $hook_content );
@@ -128,7 +128,7 @@ class IntegrationTest extends TestCase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
-		$hook_content = $documentation['hooks']['test_action'];
+		$hook_content = $documentation['hooks']['test_action']['content'];
 		$this->assertStringContainsString( 'add_action(', $hook_content );
 		$this->assertStringNotContainsString( 'return $data;', $hook_content );
 	}
@@ -143,7 +143,7 @@ class IntegrationTest extends TestCase {
 
 		$this->assertArrayHasKey( 'gatherpress_pseudopostmetas', $documentation['hooks'] );
 
-		$hook_content = $documentation['hooks']['gatherpress_pseudopostmetas'];
+		$hook_content = $documentation['hooks']['gatherpress_pseudopostmetas']['content'];
 		$this->assertStringContainsString( '## Example', $hook_content );
 		$this->assertStringContainsString( 'event-organiser', $hook_content );
 		$this->assertStringContainsString( 'add_filter', $hook_content );
