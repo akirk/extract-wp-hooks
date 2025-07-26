@@ -1,9 +1,6 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
-class IntegrationTest extends TestCase {
-
+class IntegrationTest extends WpHookExtractor_Testcase {
 	public function test_example_code_extraction() {
 		$file_path = __DIR__ . '/fixtures/docblock_with_example.php';
 		$extractor = new WpHookExtractor();
@@ -45,7 +42,7 @@ class IntegrationTest extends TestCase {
 		$this->assertCount( 1, $hook['examples'] );
 		$this->assertStringContainsString( 'add_filter', $hook['examples'][0]['content'] );
 		$this->assertStringContainsString( 'my_filter_function', $hook['examples'][0]['content'] );
-		$this->assertStringEqualsFile(
+		$this->assertStringEqualsFileOrWrite(
 			__DIR__ . '/fixtures/expected/example_docblock_example_word_only.md',
 			'## Example' . PHP_EOL . PHP_EOL . $hook['examples'][0]['content'] . PHP_EOL
 		);

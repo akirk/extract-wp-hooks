@@ -1,20 +1,6 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
-class ExampleStyleTest extends TestCase {
-	private function assertStringEqualsFileOrWrite( $expected_file_path, $actual_content ) {
-		if ( ! file_exists( $expected_file_path ) ) {
-			$dir = dirname( $expected_file_path );
-			if ( ! is_dir( $dir ) ) {
-				mkdir( $dir, 0755, true );
-			}
-			file_put_contents( $expected_file_path, $actual_content );
-			file_put_contents( 'php://stderr', 'Updated fixture: ' . basename( $expected_file_path ) . "\n" );
-		}
-		return $this->assertStringEqualsFile( $expected_file_path, $actual_content );
-	}
-
+class ExampleStyleTest extends WpHookExtractor_Testcase {
 	public function test_default_example_style_0_params() {
 		$config = array( 'example_style' => 'default' );
 		$extractor = new WpHookExtractor( $config );
