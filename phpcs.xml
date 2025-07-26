@@ -33,12 +33,12 @@
 
 	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
 		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
-		<exclude-pattern>tests/ExampleStyleTest.php</exclude-pattern>
+		<exclude-pattern>tests/bootstrap.php</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_mkdir">
 		<exclude-pattern>class-wphookextractor.php</exclude-pattern>
-		<exclude-pattern>tests/ExampleStyleTest.php</exclude-pattern>
+		<exclude-pattern>tests/bootstrap.php</exclude-pattern>
 	</rule>
 
 	<rule ref="WordPress.Security.EscapeOutput">

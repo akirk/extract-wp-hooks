@@ -17,5 +17,4 @@ class WpHookExtractor_Testcase extends PHPUnit\Framework\TestCase {
 		}
 		return $this->assertStringEqualsFile( $expected_file_path, $actual_content );
 	}
-
 }
