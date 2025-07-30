@@ -608,6 +608,60 @@ class WpHookExtractor {
 						}
 					}
 				}
+
+				// Generate signature based on format.
+				switch ( $this->config['example_style'] ) {
+					case 'prefixed':
+						$callback_name = 'my_' . $hook . '_callback';
+						$function_signature = "function {$callback_name}(";
+						if ( count( $signature_params ) === 0 ) {
+							$function_signature .= ') {';
+						} elseif ( count( $signature_params ) === 1 ) {
+							$function_signature .= ' ' . $signature_params[0] . ' ) {';
+						} else {
+							$function_signature .= ' ' . implode( ', ', $signature_params ) . ' ) {';
+						}
+						$function_signature .= "\n    // Your code here.";
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$function_signature .= "\n    return " . end( $first_param ) . ';';
+						}
+						$function_signature .= "\n}";
+
+						// Add hook registration on a single line below the function.
+						$hook_registration = $hook_function . "( '{$hook}', '{$callback_name}'";
+						if ( $consistent_param_count > 1 ) {
+							$hook_registration .= ", 10, {$consistent_param_count}";
+						}
+						$hook_registration .= ' );';
+
+						$signature = "{$function_signature}\n{$hook_registration}";
+						break;
+					default:
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
+						if ( count( $signature_params ) === 1 ) {
+							$signature .= ' ' . $signature_params[0] . ' ) {';
+						} elseif ( count( $signature_params ) > 1 ) {
+							$signature .= PHP_EOL . '        ';
+							$signature .= implode( ',' . PHP_EOL . '        ', $signature_params ) . PHP_EOL . '    ) {';
+						} else {
+							$signature .= ') {';
+						}
+						$signature .= PHP_EOL . '        // Your code here.';
+						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
+							$first_param = explode( ' ', $signature_params[0] );
+							$signature .= PHP_EOL . '        return ' . end( $first_param ) . ';';
+						}
+						$signature .= PHP_EOL . '    }';
+
+						if ( $consistent_param_count > 1 ) {
+							$signature .= ',' . PHP_EOL . '    10,' . PHP_EOL . '    ' . $consistent_param_count . PHP_EOL;
+						} else {
+							$signature .= PHP_EOL;
+						}
+						$signature .= ');';
+						break;
+				}
 				$sections['parameters'] = $params . PHP_EOL . PHP_EOL;
 			}
 
