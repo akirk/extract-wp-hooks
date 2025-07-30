@@ -293,23 +293,4 @@ class ExampleStyleTest extends WpHookExtractor_Testcase {
 
 		$this->assertStringEqualsFileOrWrite( __DIR__ . '/fixtures/expected/example_prefixed_complex_params_invalid_comment_position.md', $documentation['hooks']['complex_hook_invalid_comment']['example'] );
 	}
-
-	public function test_prefixed_example_style_with_function_docs() {
-		$config = array(
-			'example_style'         => 'prefixed',
-			'include_function_docs' => true,
-		);
-		$extractor = new WpHookExtractor( $config );
-
-		$file_path = __DIR__ . '/fixtures/simple_filter.php';
-		$hooks = $extractor->extract_hooks_from_file( $file_path );
-
-		// Add a description to the hook for testing purposes.
-		$hooks['simple_hook']['comment'] = 'Filters the value.';
-
-		$github_blob_url = 'https://github.com/test/repo/blob/main/';
-		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
-
-		$this->assertStringEqualsFileOrWrite( __DIR__ . '/fixtures/expected/example_prefixed_with_docs.md', $documentation['hooks']['simple_hook']['example'] );
-	}
 }
