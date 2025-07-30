@@ -2,7 +2,7 @@
 
 ```php
 /**
- * Callback function for the 'simple_hook' filter.
+ * Filters the value.
  *
  * @param mixed $value 
  * @return mixed The filtered value.
