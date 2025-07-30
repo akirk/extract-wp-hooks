@@ -619,8 +619,7 @@ class WpHookExtractor {
 						} elseif ( count( $signature_params ) === 1 ) {
 							$function_signature .= ' ' . $signature_params[0] . ' ) {';
 						} else {
-							$function_signature .= "\n    ";
-							$function_signature .= implode( ",\n    ", $signature_params ) . "\n) {";
+							$function_signature .= ' ' . implode( ', ', $signature_params ) . ' ) {';
 						}
 						$function_signature .= "\n    // Your code here.";
 						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
@@ -629,11 +628,14 @@ class WpHookExtractor {
 						}
 						$function_signature .= "\n}";
 
-						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
+						// Add hook registration on a single line below the function.
+						$hook_registration = $hook_function . "( '{$hook}', '{$callback_name}'";
 						if ( $consistent_param_count > 1 ) {
-							$signature .= ",\n    10,\n    {$consistent_param_count}";
+							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
-						$signature .= "\n);\n\n{$function_signature}";
+						$hook_registration .= " );";
+
+						$signature = "{$function_signature}\n{$hook_registration}";
 						break;
 					default:
 						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
@@ -675,8 +677,7 @@ class WpHookExtractor {
 						} elseif ( count( $signature_params ) === 1 ) {
 							$function_signature .= ' ' . $signature_params[0] . ' ) {';
 						} else {
-							$function_signature .= "\n    ";
-							$function_signature .= implode( ",\n    ", $signature_params ) . "\n) {";
+							$function_signature .= ' ' . implode( ', ', $signature_params ) . ' ) {';
 						}
 						$function_signature .= "\n    // Your code here.";
 						if ( 'action' !== $hook_type && ! empty( $signature_params[0] ) ) {
@@ -685,11 +686,14 @@ class WpHookExtractor {
 						}
 						$function_signature .= "\n}";
 
-						$signature = $hook_function . "(\n   '{$hook}',\n    '{$callback_name}'";
+						// Add hook registration on a single line below the function.
+						$hook_registration = $hook_function . "( '{$hook}', '{$callback_name}'";
 						if ( $consistent_param_count > 1 ) {
-							$signature .= ",\n    10,\n    {$consistent_param_count}";
+							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
-						$signature .= "\n);\n\n{$function_signature}";
+						$hook_registration .= " );";
+
+						$signature = "{$function_signature}\n{$hook_registration}";
 						break;
 					default:
 						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
