@@ -633,7 +633,7 @@ class WpHookExtractor {
 						if ( $consistent_param_count > 1 ) {
 							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
-						$hook_registration .= " );";
+						$hook_registration .= ' );';
 
 						$signature = "{$function_signature}\n{$hook_registration}";
 						break;
@@ -691,7 +691,7 @@ class WpHookExtractor {
 						if ( $consistent_param_count > 1 ) {
 							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
-						$hook_registration .= " );";
+						$hook_registration .= ' );';
 
 						$signature = "{$function_signature}\n{$hook_registration}";
 						break;
