@@ -693,7 +693,23 @@ class WpHookExtractor {
 						}
 						$hook_registration .= ' );';
 
-						$signature = "{$function_signature}\n{$hook_registration}";
+						// Extract parameter information for documentation.
+						$param_docs = array();
+						foreach ( $signature_params as $param ) {
+							$param_docs[] = $param;
+						}
+
+						// Generate the function documentation.
+						$function_docs = $this->generate_function_docs(
+							$hook,
+							$hook_type,
+							$param_docs,
+							$data['comment'] ?? '',
+							$data['returns'] ?? '',
+							$callback_name
+						);
+
+						$signature = "{$function_docs}\n{$function_signature}\n{$hook_registration}";
 						break;
 					default:
 						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
@@ -781,5 +797,125 @@ class WpHookExtractor {
 
 	public static function sample_config() {
 		return file_get_contents( __DIR__ . '/../.extract-wp-hooks.json' );
+	}
+
+	/**
+	 * Generates PHPDoc documentation for a hook callback function.
+	 *
+	 * @param string $hook_name     The name of the hook.
+	 * @param string $hook_type     The type of hook ('filter' or 'action').
+	 * @param array  $params        Array of parameter information.
+	 * @param string $description   The hook description.
+	 * @param string $return_type   The return type for filters.
+	 * @param string $callback_name The name of the callback function.
+	 * @return string               The generated function documentation.
+	 */
+	public function generate_function_docs( $hook_name, $hook_type, $params = array(), $description = '', $return_type = '', $callback_name = '' ) {
+		if ( empty( $callback_name ) ) {
+			$callback_name = 'my_' . $hook_name . '_callback';
+		}
+
+		$doc = "/**\n";
+
+		// Add function description.
+		if ( ! empty( $description ) ) {
+			// Format the description for PHPDoc.
+			$description = trim( $description );
+			$lines = explode( "\n", $description );
+			foreach ( $lines as $index => $line ) {
+				$line = trim( $line );
+
+				// Add period to the last line if it doesn't have one.
+				if ( count( $lines ) - 1 === $index && ! empty( $line ) && ! in_array( substr( $line, -1 ), array( '.', '!', '?' ) ) ) {
+					$line .= '.';
+				}
+
+				$doc .= ' * ' . $line . "\n";
+			}
+		} else {
+			$doc .= " * Callback function for the '{$hook_name}' " . $hook_type . ".\n";
+		}
+
+		// Only add the empty line separator if we have parameters or a return type.
+		if ( ! empty( $params ) || ( 'filter' === $hook_type && ! empty( $return_type ) ) ) {
+			$doc .= " *\n";
+		}
+
+		// Add parameters.
+		if ( ! empty( $params ) ) {
+			// First, find the longest type to align parameters properly.
+			$max_type_length = 0;
+			foreach ( $params as $param_info ) {
+				$parts = explode( ' ', $param_info, 2 );
+				if ( count( $parts ) === 2 ) {
+					$max_type_length = max( $max_type_length, strlen( $parts[0] ) );
+				}
+			}
+
+			foreach ( $params as $i => $param_info ) {
+				// Parse parameter information.
+				$parts = explode( ' ', $param_info, 2 );
+
+				if ( count( $parts ) === 2 ) {
+					// We have both type and variable name.
+					$param_type = $parts[0];
+					$param_var = $parts[1];
+
+					// Extract just the variable name without default value.
+					if ( strpos( $param_var, '=' ) !== false ) {
+						$param_var = trim( explode( '=', $param_var )[0] );
+					}
+
+					// Remove $ if present.
+					$param_name = ltrim( $param_var, '$' );
+
+					// Get parameter description if available.
+					$param_desc = '';
+					if ( isset( $this->hooks[ $hook_name ]['param_descriptions'][ $i ] ) ) {
+						$param_desc = $this->hooks[ $hook_name ]['param_descriptions'][ $i ];
+					}
+
+					// Pad the type to align variables.
+					$padded_type = str_pad( $param_type, $max_type_length, ' ', STR_PAD_RIGHT );
+					$doc .= " * @param {$padded_type} \${$param_name} {$param_desc}\n";
+				} else {
+					// Just a variable name without type.
+					$param_var = $parts[0];
+					$param_name = ltrim( $param_var, '$' );
+
+					// Get parameter description if available.
+					$param_desc = '';
+					if ( isset( $this->hooks[ $hook_name ]['param_descriptions'][ $i ] ) ) {
+						$param_desc = $this->hooks[ $hook_name ]['param_descriptions'][ $i ];
+					}
+
+					$doc .= " * @param mixed \${$param_name} {$param_desc}\n";
+				}
+			}
+		}
+
+		// Add return type for filters.
+		if ( 'filter' === $hook_type ) {
+			if ( ! empty( $return_type ) ) {
+				$return_parts = preg_split( '/ +/', $return_type, 2 );
+				$return_type = $return_parts[0];
+				$return_desc = $return_parts[1] ?? '';
+				$doc .= " * @return {$return_type} {$return_desc}\n";
+			} elseif ( ! empty( $params ) ) {
+				// If we have parameters, assume we return the first parameter's type.
+				$first_param = explode( ' ', $params[0], 2 );
+				if ( count( $first_param ) === 2 ) {
+					$doc .= " * @return {$first_param[0]} The filtered value.\n";
+				} else {
+					$doc .= " * @return mixed The filtered value.\n";
+				}
+			} else {
+				$doc .= " * @return mixed The filtered value.\n";
+			}
+		}
+
+		$doc .= ' */';
+
+		return $doc;
 	}
 }
