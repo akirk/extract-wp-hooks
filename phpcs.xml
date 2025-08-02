@@ -14,11 +14,20 @@
 		<exclude name="Squiz.Commenting.FileComment.MissingPackageTag" />
 		<exclude name="Squiz.Commenting.VariableComment.Missing" />
 		<exclude name="Squiz.Commenting.FunctionComment.Missing" />
+		<exclude name="Squiz.Commenting.FunctionComment.Missing" />
+
 	</rule>
 	<rule ref="WordPress-Docs" />
 
+	<rule ref="WordPress.Security.ValidatedSanitizedInput.InputNotSanitized">
+		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
+	</rule>
 
 	<rule ref="WordPress.Security.EscapeOutput.OutputNotEscaped">
+		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.Security.ValidatedSanitizedInput.MissingUnslash">
 		<exclude-pattern>extract-wp-hooks.php</exclude-pattern>
 	</rule>
 
