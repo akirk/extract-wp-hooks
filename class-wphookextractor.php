@@ -13,6 +13,7 @@ class WpHookExtractor {
 				'section'       => 'file',
 				'namespace'     => '',
 				'example_style' => 'default',
+				'top_headline'  => false,
 			),
 			$config
 		);
@@ -781,6 +782,12 @@ class WpHookExtractor {
 
 		foreach ( $documentation['hooks'] as $hook => $sections ) {
 			$doc = '';
+			
+			// Add top headline with hook name if enabled.
+			if ( $this->config['top_headline'] ) {
+				$doc .= "# $hook\n\n";
+			}
+			
 			foreach ( $section_order as $section_key ) {
 				if ( isset( $sections[ $section_key ] ) ) {
 					$doc .= $sections[ $section_key ];
