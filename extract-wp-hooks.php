@@ -30,23 +30,6 @@ foreach ( array( 'wiki_directory', 'github_blob_url' ) as $key ) {
 	}
 }
 
-if ( empty( $config['exclude_dirs'] ) ) {
-	$config['exclude_dirs'] = array();
-}
-$config['exclude_dirs'][] = 'vendor';
-if ( empty( $config['ignore_filter'] ) ) {
-	$config['ignore_filter'] = array();
-}
-if ( empty( $config['ignore_regex'] ) ) {
-	$config['ignore_regex'] = false;
-}
-if ( empty( $config['section'] ) ) {
-	$config['section'] = 'file';
-}
-if ( empty( $config['namespace'] ) ) {
-	$config['namespace'] = '';
-}
-
 $base = isset( $config['base_dir'] ) ? $config['base_dir'] : getcwd();
 if ( '.' === $base ) {
 	$base = getcwd();
