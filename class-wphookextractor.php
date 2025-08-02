@@ -435,6 +435,11 @@ class WpHookExtractor {
 				$index .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
 			}
 			$sections = array();
+
+			if ( $this->config['top_headline'] ) {
+				$sections['headline'] = "# $hook\n\n";
+			}
+
 			$has_example = false;
 			$index .= "- [`$hook`]($hook)";
 			if ( ! empty( $data['comment'] ) ) {
@@ -778,15 +783,10 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true );
 		}
 
-		$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
+		$section_order = array( 'headline', 'description', 'example', 'parameters', 'returns', 'files' );
 
 		foreach ( $documentation['hooks'] as $hook => $sections ) {
 			$doc = '';
-
-			// Add top headline with hook name if enabled.
-			if ( $this->config['top_headline'] ) {
-				$doc .= "# $hook\n\n";
-			}
 
 			foreach ( $section_order as $section_key ) {
 				if ( isset( $sections[ $section_key ] ) ) {

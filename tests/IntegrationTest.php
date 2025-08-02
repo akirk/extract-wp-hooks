@@ -168,4 +168,21 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		$this->assertCount( 2, $hooks['two_param_action_hook']['files'] );
 		$this->assertCount( 3, $hooks['two_param_action_hook']['params'] );
 	}
+
+
+	public function test_top_headline_enabled() {
+		$config = array(
+			'example_style' => 'default',
+			'top_headline' => true
+		);
+		$extractor = new WpHookExtractor( $config );
+
+		$file_path = __DIR__ . '/fixtures/zero_params.php';
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$github_blob_url = 'https://github.com/test/repo/blob/main/';
+		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
+
+		$this->assertArrayHasKey( 'headline', $documentation['hooks']['zero_param_hook'] );
+	}
 }
