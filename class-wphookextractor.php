@@ -7,13 +7,14 @@ class WpHookExtractor {
 	public function __construct( $config = array() ) {
 		$this->config = array_merge(
 			array(
-				'exclude_dirs'  => array( 'vendor' ),
-				'ignore_filter' => array(),
-				'ignore_regex'  => false,
-				'section'       => 'file',
-				'namespace'     => '',
-				'example_style' => 'default',
-				'top_headline'  => false,
+				'exclude_dirs'       => array( 'vendor' ),
+				'ignore_filter'      => array(),
+				'ignore_regex'       => false,
+				'section'            => 'file',
+				'namespace'          => '',
+				'example_style'      => 'default',
+				'autoexample_phpdoc' => true,
+				'top_headline'       => false,
 			),
 			$config
 		);
@@ -705,17 +706,21 @@ class WpHookExtractor {
 							$param_docs[] = $param;
 						}
 
-						// Generate the function documentation.
-						$function_docs = $this->generate_function_docs(
-							$hook,
-							$hook_type,
-							$param_docs,
-							$data['comment'] ?? '',
-							$data['returns'] ?? '',
-							$callback_name
-						);
+						$signature = $function_signature . PHP_EOL . $hook_registration;
 
-						$signature = "{$function_docs}\n{$function_signature}\n{$hook_registration}";
+						// Generate the function documentation.
+						if ( $this->config['autoexample_phpdoc'] ) {
+							$function_docs = $this->generate_function_docs(
+								$hook,
+								$hook_type,
+								$param_docs,
+								$data['comment'] ?? '',
+								$data['returns'] ?? '',
+								$callback_name
+							);
+
+							$signature = $function_docs . PHP_EOL . $signature;
+						}
 						break;
 					default:
 						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
