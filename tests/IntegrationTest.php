@@ -173,7 +173,7 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 	public function test_top_headline_enabled() {
 		$config = array(
 			'example_style' => 'default',
-			'top_headline' => true
+			'top_headline'  => true,
 		);
 		$extractor = new WpHookExtractor( $config );
 
