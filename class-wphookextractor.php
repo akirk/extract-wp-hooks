@@ -13,6 +13,7 @@ class WpHookExtractor {
 				'section'       => 'file',
 				'namespace'     => '',
 				'example_style' => 'default',
+				'top_headline'  => false,
 			),
 			$config
 		);
@@ -434,6 +435,11 @@ class WpHookExtractor {
 				$index .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
 			}
 			$sections = array();
+
+			if ( $this->config['top_headline'] ) {
+				$sections['headline'] = "# $hook\n\n";
+			}
+
 			$has_example = false;
 			$index .= "- [`$hook`]($hook)";
 			if ( ! empty( $data['comment'] ) ) {
@@ -777,10 +783,11 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true );
 		}
 
-		$section_order = array( 'description', 'example', 'parameters', 'returns', 'files' );
+		$section_order = array( 'headline', 'description', 'example', 'parameters', 'returns', 'files' );
 
 		foreach ( $documentation['hooks'] as $hook => $sections ) {
 			$doc = '';
+
 			foreach ( $section_order as $section_key ) {
 				if ( isset( $sections[ $section_key ] ) ) {
 					$doc .= $sections[ $section_key ];

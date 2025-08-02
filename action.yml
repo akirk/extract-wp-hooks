@@ -44,6 +44,10 @@ inputs:
     description: "Style for the auto-generated example code: 'default' or 'prefixed'"
     required: false
     default: "default"
+  top-headline:
+    description: "Write a headline for each markdown document"
+    required: false
+    default: false
 
 outputs:
   hooks-found:
@@ -123,6 +127,7 @@ runs:
             "github_blob_url": "$github_blob_url",
             "exclude_dirs": [$exclude_dirs],
             "example_style": "${{ inputs.example-style }}",
+            "top_headline": ${!inputs.top-headline:-false},
             "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
             "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
             "section": "${{ inputs.section }}"' || echo '')
