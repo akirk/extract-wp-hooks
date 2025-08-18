@@ -127,7 +127,7 @@ runs:
             "github_blob_url": "$github_blob_url",
             "exclude_dirs": [$exclude_dirs],
             "example_style": "${{ inputs.example-style }}",
-            "top_headline": ${!inputs.top-headline:-false},
+            "top_headline": ${{ inputs.top-headline }},
             "ignore_filter": [$ignore_filters]$([ -n "${{ inputs.ignore-regex }}" ] && echo ',
             "ignore_regex": "${{ inputs.ignore-regex }}"' || echo '')$([ "${{ inputs.section }}" != "file" ] && echo ',
             "section": "${{ inputs.section }}"' || echo '')
