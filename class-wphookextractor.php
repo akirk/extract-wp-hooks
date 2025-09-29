@@ -935,20 +935,20 @@ class WpHookExtractor {
 		}
 
 		$builtin_types = array(
-			'int',
-			'string',
-			'bool',
 			'array',
-			'object',
-			'unknown',
-			'null',
-			'mixed',
-			'void',
-			'false',
-			'true',
+			'bool',
 			'callable',
-			'resource',
+			'false',
+			'int',
 			'iterable',
+			'mixed',
+			'null',
+			'object',
+			'resource',
+			'string',
+			'true',
+			'unknown',
+			'void',
 		);
 
 		if ( $this->config['namespace'] && ! in_array( strtok( $type, '|' ), $builtin_types, true ) && substr( $type, 0, 3 ) !== 'WP_' ) {
