@@ -185,4 +185,39 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 
 		$this->assertArrayHasKey( 'headline', $documentation['hooks']['zero_param_hook'] );
 	}
+
+	public function test_dynamic_hook_extraction() {
+		$file_path = __DIR__ . '/fixtures/dynamic_hook.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		// Verify the hook name includes the dynamic part with {$var} syntax.
+		$this->assertArrayHasKey( 'activitypub_inbox_{$type}', $hooks );
+
+		$hook = $hooks['activitypub_inbox_{$type}'];
+		$this->assertEquals( 'do_action', $hook['type'] );
+		$this->assertArrayHasKey( 'comment', $hook );
+		$this->assertEquals( 'ActivityPub inbox action for specific activity types.', $hook['comment'] );
+
+		// Verify parameters are extracted.
+		$this->assertArrayHasKey( 'params', $hook );
+		$this->assertCount( 3, $hook['params'] );
+	}
+
+	public function test_dynamic_hook_documentation_uses_wildcard() {
+		$file_path = __DIR__ . '/fixtures/dynamic_hook.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$github_blob_url = 'https://github.com/test/repo/blob/main/';
+		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
+
+		$this->assertArrayHasKey( 'activitypub_inbox_{$type}', $documentation['hooks'] );
+		$example = $documentation['hooks']['activitypub_inbox_{$type}']['example'];
+
+		// Verify the example uses * instead of {$type}.
+		$this->assertStringContainsString( 'activitypub_inbox_*', $example );
+		$this->assertStringNotContainsString( 'activitypub_inbox_{$type}', $example );
+		$this->assertStringNotContainsString( '{$type}', $example );
+	}
 }
