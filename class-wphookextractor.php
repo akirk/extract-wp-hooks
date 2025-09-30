@@ -57,13 +57,24 @@ class WpHookExtractor {
 				}
 			}
 
-			for ( $j = $i + 1; $j < $i + 10; $j++ ) {
-				if ( ! is_array( $tokens[ $j ] ) ) {
-					continue;
+			for ( $j = $i + 1; $j < $i + 20; $j++ ) {
+				if ( ! isset( $tokens[ $j ] ) ) {
+					break;
 				}
 
-				if ( T_CONSTANT_ENCAPSED_STRING === $tokens[ $j ][0] ) {
+				if ( is_array( $tokens[ $j ] ) && T_CONSTANT_ENCAPSED_STRING === $tokens[ $j ][0] ) {
 					$hook = trim( $tokens[ $j ][1], '"\'' );
+
+					// Check if this is followed by concatenation.
+					$dynamic_parts = $this->extract_dynamic_parts( $tokens, $j + 1 );
+
+					// If we found dynamic parts, append them to the hook name.
+					if ( ! empty( $dynamic_parts ) ) {
+						foreach ( $dynamic_parts as $part ) {
+							$hook .= '{' . $part . '}';
+						}
+					}
+
 					break;
 				}
 			}
@@ -613,6 +624,7 @@ class WpHookExtractor {
 				}
 
 				// Generate signature based on format.
+				$hook_for_example = $this->get_hook_name_for_example( $hook );
 				switch ( $this->config['example_style'] ) {
 					case 'prefixed':
 						$callback_name = 'my_' . $hook . '_callback';
@@ -632,7 +644,7 @@ class WpHookExtractor {
 						$function_signature .= "\n}";
 
 						// Add hook registration on a single line below the function.
-						$hook_registration = $hook_function . "( '{$hook}', '{$callback_name}'";
+						$hook_registration = $hook_function . "( '{$hook_for_example}', '{$callback_name}'";
 						if ( $consistent_param_count > 1 ) {
 							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
@@ -641,7 +653,7 @@ class WpHookExtractor {
 						$signature = "{$function_signature}\n{$hook_registration}";
 						break;
 					default:
-						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook_for_example . '\',' . PHP_EOL . '    function(';
 						if ( count( $signature_params ) === 1 ) {
 							$signature .= ' ' . $signature_params[0] . ' ) {';
 						} elseif ( count( $signature_params ) > 1 ) {
@@ -671,6 +683,7 @@ class WpHookExtractor {
 			// Generate example even for hooks without parameters.
 			if ( ! $has_example ) {
 				// Generate signature based on format.
+				$hook_for_example = $this->get_hook_name_for_example( $hook );
 				switch ( $this->config['example_style'] ) {
 					case 'prefixed':
 						$callback_name = 'my_' . $hook . '_callback';
@@ -690,7 +703,7 @@ class WpHookExtractor {
 						$function_signature .= "\n}";
 
 						// Add hook registration on a single line below the function.
-						$hook_registration = $hook_function . "( '{$hook}', '{$callback_name}'";
+						$hook_registration = $hook_function . "( '{$hook_for_example}', '{$callback_name}'";
 						if ( $consistent_param_count > 1 ) {
 							$hook_registration .= ", 10, {$consistent_param_count}";
 						}
@@ -719,7 +732,7 @@ class WpHookExtractor {
 						}
 						break;
 					default:
-						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook . '\',' . PHP_EOL . '    function(';
+						$signature = $hook_function . '(' . PHP_EOL . '   \'' . $hook_for_example . '\',' . PHP_EOL . '    function(';
 						if ( count( $signature_params ) === 1 ) {
 							$signature .= ' ' . $signature_params[0] . ' ) {';
 						} elseif ( count( $signature_params ) > 1 ) {
@@ -922,6 +935,76 @@ class WpHookExtractor {
 
 		return $doc;
 	}
+
+	/**
+	 * Extract dynamic parts from concatenated hook names.
+	 *
+	 * @param array $tokens     All tokens from the file.
+	 * @param int   $start_pos  Position to start checking from.
+	 * @return array Array of variable names found in concatenation.
+	 */
+	private function extract_dynamic_parts( $tokens, $start_pos ) {
+		$dynamic_parts = array();
+
+		for ( $k = $start_pos; $k < $start_pos + 10; $k++ ) {
+			if ( ! isset( $tokens[ $k ] ) ) {
+				break;
+			}
+
+			// Skip whitespace.
+			if ( is_array( $tokens[ $k ] ) && T_WHITESPACE === $tokens[ $k ][0] ) {
+				continue;
+			}
+
+			// Check for concatenation operator.
+			if ( '.' === $tokens[ $k ] ) {
+				// Look for the next token (variable or string).
+				for ( $m = $k + 1; $m < $k + 5; $m++ ) {
+					if ( ! isset( $tokens[ $m ] ) ) {
+						break;
+					}
+
+					// Skip whitespace.
+					if ( is_array( $tokens[ $m ] ) && T_WHITESPACE === $tokens[ $m ][0] ) {
+						continue;
+					}
+
+					// Found a variable - extract its name.
+					if ( is_array( $tokens[ $m ] ) && T_VARIABLE === $tokens[ $m ][0] ) {
+						$dynamic_parts[] = $tokens[ $m ][1];
+						break;
+					}
+
+					// If it's another string, stop.
+					if ( is_array( $tokens[ $m ] ) && T_CONSTANT_ENCAPSED_STRING === $tokens[ $m ][0] ) {
+						break;
+					}
+
+					break;
+				}
+				continue;
+			}
+
+			// If we hit a comma or closing paren, we're done.
+			if ( ',' === $tokens[ $k ] || ')' === $tokens[ $k ] ) {
+				break;
+			}
+
+			break;
+		}
+
+		return $dynamic_parts;
+	}
+
+	/**
+	 * Get the hook name for use in examples (replaces {$var} with *).
+	 *
+	 * @param string $hook The hook name.
+	 * @return string The hook name for examples.
+	 */
+	private function get_hook_name_for_example( $hook ) {
+		return preg_replace( '/\{\$[^}]+\}/', '*', $hook );
+  }
 
 	/**
 	 * Prefix a type with the namespace if needed.
