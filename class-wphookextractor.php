@@ -1004,7 +1004,7 @@ class WpHookExtractor {
 	 */
 	private function get_hook_name_for_example( $hook ) {
 		return preg_replace( '/\{\$[^}]+\}/', '*', $hook );
-  }
+	}
 
 	/**
 	 * Prefix a type with the namespace if needed.

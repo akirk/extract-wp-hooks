@@ -186,7 +186,7 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		$this->assertArrayHasKey( 'headline', $documentation['hooks']['zero_param_hook'] );
 	}
 
-  public function test_null_param_without_namespace_prefix() {
+	public function test_null_param_without_namespace_prefix() {
 		$config = array(
 			'namespace' => 'ActivityPub',
 		);
