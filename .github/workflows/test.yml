@@ -33,5 +33,10 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
+      - name: Validate tests fail without code changes
+        uses: akirk/unit-test-failure@main
+        with:
+          test-command: composer test
+
       - name: Run test suite
         run: composer run-script test

@@ -186,6 +186,30 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		$this->assertArrayHasKey( 'headline', $documentation['hooks']['zero_param_hook'] );
 	}
 
+  public function test_null_param_without_namespace_prefix() {
+		$config = array(
+			'namespace' => 'ActivityPub',
+		);
+		$extractor = new WpHookExtractor( $config );
+
+		$file_path = __DIR__ . '/fixtures/null_param.php';
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$github_blob_url = 'https://github.com/test/repo/blob/main/';
+		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
+
+		$this->assertArrayHasKey( 'activitypub_pre_get_by_username', $documentation['hooks'] );
+		$params_section = $documentation['hooks']['activitypub_pre_get_by_username']['parameters'];
+
+		// Verify that null type is not prefixed with namespace.
+		$this->assertStringContainsString( '*`null`*', $params_section );
+		$this->assertStringNotContainsString( 'ActivityPub\\null', $params_section );
+
+		// Verify string type is also not prefixed.
+		$this->assertStringContainsString( '*`string`*', $params_section );
+		$this->assertStringNotContainsString( 'ActivityPub\\string', $params_section );
+	}
+
 	public function test_dynamic_hook_extraction() {
 		$file_path = __DIR__ . '/fixtures/dynamic_hook.php';
 		$extractor = new WpHookExtractor();
