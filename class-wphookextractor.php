@@ -581,11 +581,7 @@ class WpHookExtractor {
 
 					++$count;
 					$p = preg_split( '/ +/', $param, 3 );
-					if ( '\\' === substr( $p[0], 0, 1 ) ) {
-						$p[0] = substr( $p[0], 1 );
-					} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'object', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
-						$p[0] = $this->config['namespace'] . '\\' . $p[0];
-					}
+					$p[0] = $this->maybe_prefix_namespace( $p[0] );
 					// Determine if this parameter should be optional (not used consistently across all files).
 					$is_optional = $i >= $consistent_param_count;
 
@@ -753,11 +749,7 @@ class WpHookExtractor {
 			if ( ! empty( $data['returns'] ) ) {
 				$returns_content = "## Returns\n";
 				$p = preg_split( '/ +/', $data['returns'], 2 );
-				if ( '\\' === substr( $p[0], 0, 1 ) ) {
-					$p[0] = substr( $p[0], 1 );
-				} elseif ( $this->config['namespace'] && ! in_array( strtok( $p[0], '|' ), array( 'int', 'string', 'bool', 'array', 'unknown' ) ) && substr( $p[0], 0, 3 ) !== 'WP_' ) {
-					$p[0] = $this->config['namespace'] . '\\' . $p[0];
-				}
+				$p[0] = $this->maybe_prefix_namespace( $p[0] );
 				if ( ! isset( $p[1] ) ) {
 					$p[1] = '';
 				}
@@ -929,5 +921,40 @@ class WpHookExtractor {
 		$doc .= ' */';
 
 		return $doc;
+	}
+
+	/**
+	 * Prefix a type with the namespace if needed.
+	 *
+	 * @param string $type The type to potentially prefix.
+	 * @return string The type, prefixed with namespace if applicable.
+	 */
+	private function maybe_prefix_namespace( $type ) {
+		if ( '\\' === substr( $type, 0, 1 ) ) {
+			return substr( $type, 1 );
+		}
+
+		$builtin_types = array(
+			'array',
+			'bool',
+			'callable',
+			'false',
+			'int',
+			'iterable',
+			'mixed',
+			'null',
+			'object',
+			'resource',
+			'string',
+			'true',
+			'unknown',
+			'void',
+		);
+
+		if ( $this->config['namespace'] && ! in_array( strtok( $type, '|' ), $builtin_types, true ) && substr( $type, 0, 3 ) !== 'WP_' ) {
+			return $this->config['namespace'] . '\\' . $type;
+		}
+
+		return $type;
 	}
 }
