@@ -244,4 +244,110 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		$this->assertStringNotContainsString( 'activitypub_inbox_{$type}', $example );
 		$this->assertStringNotContainsString( '{$type}', $example );
 	}
+
+	public function test_deprecated_hook_detection() {
+		$file_path = __DIR__ . '/fixtures/deprecated_hooks.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		// Test deprecated action hook.
+		$this->assertArrayHasKey( 'activitypub_followers_post_follow', $hooks );
+		$deprecated_action = $hooks['activitypub_followers_post_follow'];
+		$this->assertTrue( $deprecated_action['deprecated'] );
+		$this->assertEquals( '7.5.0', $deprecated_action['deprecated_version'] );
+		$this->assertEquals( 'activitypub_handled_follow', $deprecated_action['replacement'] );
+		$this->assertEquals( 'do_action', $deprecated_action['type'] );
+
+		// Test deprecated filter hook.
+		$this->assertArrayHasKey( 'activitypub_rest_following', $hooks );
+		$deprecated_filter = $hooks['activitypub_rest_following'];
+		$this->assertTrue( $deprecated_filter['deprecated'] );
+		$this->assertEquals( '7.1.0', $deprecated_filter['deprecated_version'] );
+		$this->assertEquals( 'Please migrate your Followings to the new internal Following structure.', $deprecated_filter['replacement'] );
+		$this->assertEquals( 'apply_filters', $deprecated_filter['type'] );
+
+		// Test deprecated hook without replacement.
+		$this->assertArrayHasKey( 'old_legacy_hook', $hooks );
+		$no_replacement_hook = $hooks['old_legacy_hook'];
+		$this->assertTrue( $no_replacement_hook['deprecated'] );
+		$this->assertEquals( '8.0.0', $no_replacement_hook['deprecated_version'] );
+		$this->assertArrayNotHasKey( 'replacement', $no_replacement_hook );
+		$this->assertEquals( 'do_action', $no_replacement_hook['type'] );
+
+		// Test deprecated hook without version or replacement.
+		$this->assertArrayHasKey( 'very_old_hook', $hooks );
+		$no_version_hook = $hooks['very_old_hook'];
+		$this->assertTrue( $no_version_hook['deprecated'] );
+		$this->assertArrayNotHasKey( 'deprecated_version', $no_version_hook );
+		$this->assertArrayNotHasKey( 'replacement', $no_version_hook );
+		$this->assertEquals( 'do_action', $no_version_hook['type'] );
+
+		// Verify we have four deprecated hooks.
+		$this->assertCount( 4, $hooks );
+	}
+
+	public function test_deprecated_hook_documentation() {
+		$file_path = __DIR__ . '/fixtures/deprecated_hooks.php';
+		$extractor = new WpHookExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$github_blob_url = 'https://github.com/test/repo/blob/main/';
+		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
+
+		// Test deprecated action documentation.
+		$this->assertArrayHasKey( 'activitypub_followers_post_follow', $documentation['hooks'] );
+		$deprecated_action_sections = $documentation['hooks']['activitypub_followers_post_follow'];
+
+		// Build complete documentation for the action hook.
+		$section_order = array( 'headline', 'deprecation', 'description', 'example', 'parameters', 'returns', 'files' );
+		$action_doc = '';
+		foreach ( $section_order as $section_key ) {
+			if ( isset( $deprecated_action_sections[ $section_key ] ) ) {
+				$action_doc .= $deprecated_action_sections[ $section_key ];
+			}
+		}
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_action_hook.md', $action_doc );
+
+		// Test deprecated filter documentation.
+		$this->assertArrayHasKey( 'activitypub_rest_following', $documentation['hooks'] );
+		$deprecated_filter_sections = $documentation['hooks']['activitypub_rest_following'];
+
+		// Build complete documentation for the filter hook.
+		$filter_doc = '';
+		foreach ( $section_order as $section_key ) {
+			if ( isset( $deprecated_filter_sections[ $section_key ] ) ) {
+				$filter_doc .= $deprecated_filter_sections[ $section_key ];
+			}
+		}
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_filter_hook.md', $filter_doc );
+
+		// Test deprecated hook without replacement.
+		$this->assertArrayHasKey( 'old_legacy_hook', $documentation['hooks'] );
+		$no_replacement_sections = $documentation['hooks']['old_legacy_hook'];
+
+		// Build complete documentation for the hook without replacement.
+		$no_replacement_doc = '';
+		foreach ( $section_order as $section_key ) {
+			if ( isset( $no_replacement_sections[ $section_key ] ) ) {
+				$no_replacement_doc .= $no_replacement_sections[ $section_key ];
+			}
+		}
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_hook_no_replacement.md', $no_replacement_doc );
+
+		// Test deprecated hook without version or replacement.
+		$this->assertArrayHasKey( 'very_old_hook', $documentation['hooks'] );
+		$no_version_sections = $documentation['hooks']['very_old_hook'];
+
+		// Build complete documentation for the hook without version or replacement.
+		$no_version_doc = '';
+		foreach ( $section_order as $section_key ) {
+			if ( isset( $no_version_sections[ $section_key ] ) ) {
+				$no_version_doc .= $no_version_sections[ $section_key ];
+			}
+		}
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_hook_no_version.md', $no_version_doc );
+
+		// Test index shows deprecated marker.
+		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_hooks_index.md', $documentation['index'] );
+	}
 }
