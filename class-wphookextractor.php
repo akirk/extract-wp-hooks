@@ -29,7 +29,8 @@ class WpHookExtractor {
 			if ( ! is_array( $token ) || ! isset( $token[1] ) ) {
 				continue;
 			}
-			if ( ! in_array( ltrim( $token[1], '\\' ), array( 'apply_filters', 'do_action' ) ) ) {
+			$hook_function = ltrim( $token[1], '\\' );
+			if ( ! in_array( $hook_function, array( 'apply_filters', 'do_action', 'apply_filters_deprecated', 'do_action_deprecated' ) ) ) {
 				continue;
 			}
 
@@ -57,6 +58,9 @@ class WpHookExtractor {
 				}
 			}
 
+			$deprecation_info = array();
+			$is_deprecated = in_array( $hook_function, array( 'apply_filters_deprecated', 'do_action_deprecated' ) );
+
 			for ( $j = $i + 1; $j < $i + 20; $j++ ) {
 				if ( ! isset( $tokens[ $j ] ) ) {
 					break;
@@ -75,6 +79,11 @@ class WpHookExtractor {
 						}
 					}
 
+					// Extract deprecation information if this is a deprecated hook.
+					if ( $is_deprecated ) {
+						$deprecation_info = $this->extract_deprecation_info( $tokens, $j );
+					}
+
 					break;
 				}
 			}
@@ -85,19 +94,44 @@ class WpHookExtractor {
 				&& ( ! $this->config['ignore_regex'] || ! preg_match( $this->config['ignore_regex'], $hook ) )
 			) {
 				if ( ! isset( $hooks[ $hook ] ) ) {
-					$hooks[ $hook ] = array(
+					$hook_data = array(
 						'files'   => array(),
 						'section' => 'dir' === $this->config['section'] ? $main_dir : basename( $file_path ),
-						'type'    => $token[1],
+						'type'    => $is_deprecated ? str_replace( '_deprecated', '', $hook_function ) : $hook_function,
 						'params'  => array(),
 						'comment' => '',
 					);
+
+					// Add deprecation information if applicable.
+					if ( $is_deprecated ) {
+						$hook_data['deprecated'] = true;
+						if ( ! empty( $deprecation_info['version'] ) ) {
+							$hook_data['deprecated_version'] = $deprecation_info['version'];
+						}
+						if ( ! empty( $deprecation_info['replacement'] ) ) {
+							$hook_data['replacement'] = $deprecation_info['replacement'];
+						}
+					}
+
+					$hooks[ $hook ] = $hook_data;
 				}
 
 				$ret = $this->extract_vars( $hooks[ $hook ]['params'], $tokens, $i );
 				$file_key = $relative_dir ? $relative_dir . '/' . basename( $file_path ) . ':' . $token[2] : basename( $file_path ) . ':' . $token[2];
 				$hooks[ $hook ]['files'][ $file_key ] = $ret[1];
 				$hooks[ $hook ]['params'] = $ret[0];
+
+				// Merge deprecation info if this is a new deprecated hook and we already have the hook.
+				if ( $is_deprecated && ! isset( $hooks[ $hook ]['deprecated'] ) ) {
+					$hooks[ $hook ]['deprecated'] = true;
+					if ( ! empty( $deprecation_info['version'] ) ) {
+						$hooks[ $hook ]['deprecated_version'] = $deprecation_info['version'];
+					}
+					if ( ! empty( $deprecation_info['replacement'] ) ) {
+						$hooks[ $hook ]['replacement'] = $deprecation_info['replacement'];
+					}
+				}
+
 				$hooks[ $hook ] = array_merge( $hooks[ $hook ], $this->parse_docblock( $comment, $hooks[ $hook ]['params'] ) );
 			}
 		}
@@ -452,10 +486,43 @@ class WpHookExtractor {
 				$sections['headline'] = "# $hook\n\n";
 			}
 
+			// Add deprecation warning if this is a deprecated hook.
+			if ( ! empty( $data['deprecated'] ) ) {
+				$deprecation_warning = "> **DEPRECATED**\n";
+				if ( ! empty( $data['deprecated_version'] ) ) {
+					$deprecation_warning .= "> This hook was deprecated in version " . $data['deprecated_version'] . ".\n";
+				}
+				if ( ! empty( $data['replacement'] ) ) {
+					// Check if replacement looks like a hook name or a message.
+					if ( strpos( $data['replacement'], ' ' ) === false && ! strpos( $data['replacement'], '.' ) ) {
+						$deprecation_warning .= "> Use `" . $data['replacement'] . "` instead.\n";
+					} else {
+						$deprecation_warning .= "> " . $data['replacement'] . "\n";
+					}
+				}
+				$deprecation_warning .= "\n";
+				$sections['deprecation'] = $deprecation_warning;
+			}
+
 			$has_example = false;
-			$index .= "- [`$hook`]($hook)";
+			if ( ! empty( $data['deprecated'] ) ) {
+				$index .= "- [~~`$hook`~~]($hook) **DEPRECATED**";
+				if ( ! empty( $data['replacement'] ) ) {
+					// Check if replacement looks like a hook name or a message.
+					if ( strpos( $data['replacement'], ' ' ) === false && ! strpos( $data['replacement'], '.' ) ) {
+						$index .= ' Use `' . $data['replacement'] . '` instead';
+					} else {
+						$index .= ' ' . $data['replacement'];
+					}
+				}
+			} else {
+				$index .= "- [`$hook`]($hook)";
+				if ( ! empty( $data['comment'] ) ) {
+					$index .= ' ' . strtok( $data['comment'], PHP_EOL );
+				}
+			}
+
 			if ( ! empty( $data['comment'] ) ) {
-				$index .= ' ' . strtok( $data['comment'], PHP_EOL );
 				$sections['description'] = PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
 			}
 
@@ -793,7 +860,7 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true );
 		}
 
-		$section_order = array( 'headline', 'description', 'example', 'parameters', 'returns', 'files' );
+		$section_order = array( 'headline', 'deprecation', 'description', 'example', 'parameters', 'returns', 'files' );
 
 		foreach ( $documentation['hooks'] as $hook => $sections ) {
 			$doc = '';
@@ -934,6 +1001,62 @@ class WpHookExtractor {
 		$doc .= ' */';
 
 		return $doc;
+	}
+
+	/**
+	 * Extract deprecation information from deprecated hook calls.
+	 *
+	 * @param array $tokens     All tokens from the file.
+	 * @param int   $hook_pos   Position of the hook name string.
+	 * @return array Array containing version and replacement information.
+	 */
+	private function extract_deprecation_info( $tokens, $hook_pos ) {
+		$deprecation_info = array();
+		$param_count = 0;
+		$paren_depth = 0;
+
+		for ( $k = $hook_pos + 1; $k < $hook_pos + 50; $k++ ) {
+			if ( ! isset( $tokens[ $k ] ) ) {
+				break;
+			}
+
+			// Skip whitespace.
+			if ( is_array( $tokens[ $k ] ) && T_WHITESPACE === $tokens[ $k ][0] ) {
+				continue;
+			}
+
+			// Track parenthesis depth.
+			if ( '(' === $tokens[ $k ] ) {
+				$paren_depth++;
+			} elseif ( ')' === $tokens[ $k ] ) {
+				$paren_depth--;
+				// Stop when we hit the closing parenthesis of the main function call.
+				if ( -1 === $paren_depth ) {
+					break;
+				}
+			}
+
+			// Count commas to track parameters, but only at top level (not inside arrays/function calls).
+			if ( ',' === $tokens[ $k ] && 0 === $paren_depth ) {
+				$param_count++;
+				continue;
+			}
+
+			// Extract version (3rd parameter) and replacement (4th parameter).
+			if ( is_array( $tokens[ $k ] ) && T_CONSTANT_ENCAPSED_STRING === $tokens[ $k ][0] && 0 === $paren_depth ) {
+				$value = trim( $tokens[ $k ][1], '"\'' );
+
+				if ( 2 === $param_count ) {
+					// This is the version parameter.
+					$deprecation_info['version'] = $value;
+				} elseif ( 3 === $param_count ) {
+					// This is the replacement parameter.
+					$deprecation_info['replacement'] = $value;
+				}
+			}
+		}
+
+		return $deprecation_info;
 	}
 
 	/**
