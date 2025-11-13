@@ -490,14 +490,14 @@ class WpHookExtractor {
 			if ( ! empty( $data['deprecated'] ) ) {
 				$deprecation_warning = "> **DEPRECATED**\n";
 				if ( ! empty( $data['deprecated_version'] ) ) {
-					$deprecation_warning .= "> This hook was deprecated in version " . $data['deprecated_version'] . ".\n";
+					$deprecation_warning .= '> This hook was deprecated in version ' . $data['deprecated_version'] . ".\n";
 				}
 				if ( ! empty( $data['replacement'] ) ) {
 					// Check if replacement looks like a hook name or a message.
 					if ( strpos( $data['replacement'], ' ' ) === false && ! strpos( $data['replacement'], '.' ) ) {
-						$deprecation_warning .= "> Use `" . $data['replacement'] . "` instead.\n";
+						$deprecation_warning .= '> Use `' . $data['replacement'] . "` instead.\n";
 					} else {
-						$deprecation_warning .= "> " . $data['replacement'] . "\n";
+						$deprecation_warning .= '> ' . $data['replacement'] . "\n";
 					}
 				}
 				$deprecation_warning .= "\n";
@@ -1027,9 +1027,9 @@ class WpHookExtractor {
 
 			// Track parenthesis depth.
 			if ( '(' === $tokens[ $k ] ) {
-				$paren_depth++;
+				++$paren_depth;
 			} elseif ( ')' === $tokens[ $k ] ) {
-				$paren_depth--;
+				--$paren_depth;
 				// Stop when we hit the closing parenthesis of the main function call.
 				if ( -1 === $paren_depth ) {
 					break;
@@ -1038,7 +1038,7 @@ class WpHookExtractor {
 
 			// Count commas to track parameters, but only at top level (not inside arrays/function calls).
 			if ( ',' === $tokens[ $k ] && 0 === $paren_depth ) {
-				$param_count++;
+				++$param_count;
 				continue;
 			}
 
