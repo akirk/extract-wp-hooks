@@ -252,6 +252,7 @@ class WpHookExtractor {
 				break;
 		}
 		$inside_code = false;
+		$inside_param_block = false;
 		$current_example = null;
 		$example_content = '';
 		$code_block_indent = null;
@@ -332,8 +333,26 @@ class WpHookExtractor {
 				continue;
 			}
 
+			// Handle lines inside @param array blocks (WordPress array parameter syntax).
+			if ( $inside_param_block ) {
+				// Check for closing brace.
+				if ( preg_match( '#^\s*\}\s*$#', $line ) ) {
+					$inside_param_block = false;
+					continue;
+				}
+				// Parse @type tags inside the block, skip other content.
+				if ( ! preg_match( '#^@#', $line ) ) {
+					continue;
+				}
+			}
+
 			if ( preg_match( '#@(param)(.*)#', $line, $matches ) ) {
 				$tag_value = \trim( $matches[2] );
+
+				// Check if this starts an array parameter block (ends with {).
+				if ( preg_match( '#\{\s*$#', $tag_value ) ) {
+					$inside_param_block = true;
+				}
 
 				// If this tag was already parsed, make its value an array.
 				if ( isset( $tags['params'] ) ) {
