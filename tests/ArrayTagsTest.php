@@ -37,7 +37,7 @@ class ArrayTagsTest extends WpHookExtractor_Testcase {
 	}
 
 	/**
-	 * Test that documentation generation works with multiple @type tags.
+	 * Test that documentation generation renders @type tags in the output.
 	 */
 	public function test_multiple_type_tags_documentation() {
 		$file_path = __DIR__ . '/fixtures/multiple_type_tags.php';
@@ -49,6 +49,18 @@ class ArrayTagsTest extends WpHookExtractor_Testcase {
 
 		$this->assertArrayHasKey( 'hooks', $documentation );
 		$this->assertArrayHasKey( 'multiple_type_tags_hook', $documentation['hooks'] );
+
+		// Verify @type tags are rendered in the parameters section.
+		$hook_doc = $documentation['hooks']['multiple_type_tags_hook'];
+		$this->assertArrayHasKey( 'parameters', $hook_doc );
+		$this->assertStringContainsString( '`$name`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`$slug`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`$parent`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`$taxonomy`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`$level`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`$location`', $hook_doc['parameters'] );
+		$this->assertStringContainsString( 'Term name.', $hook_doc['parameters'] );
+		$this->assertStringContainsString( 'array<string, string>', $hook_doc['parameters'] );
 	}
 
 	/**
