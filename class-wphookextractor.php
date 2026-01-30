@@ -694,6 +694,24 @@ class WpHookExtractor {
 					}
 				}
 
+				// Render @type tags for array parameters (WordPress documentation style).
+				if ( ! empty( $data['types'] ) ) {
+					$types_list = is_array( $data['types'] ) ? $data['types'] : array( array( $data['types'] ) );
+					foreach ( $types_list as $type_entry ) {
+						$type_value = is_array( $type_entry ) ? $type_entry[0] : $type_entry;
+						// Match: type (including generics like array<string, string>) $var_name description.
+						if ( preg_match( '/^(.+?)\s+(\$\w+)\s*(.*)$/', $type_value, $matches ) ) {
+							$type_str = $this->maybe_prefix_namespace( $matches[1] );
+							$var_name = $matches[2];
+							$description = $matches[3];
+							$params .= "\n  - *`{$type_str}`* `{$var_name}`";
+							if ( ! empty( $description ) ) {
+								$params .= ' ' . $description;
+							}
+						}
+					}
+				}
+
 				// Generate signature based on format.
 				$hook_for_example = $this->get_hook_name_for_example( $hook );
 				switch ( $this->config['example_style'] ) {
@@ -1166,7 +1184,10 @@ class WpHookExtractor {
 			'void',
 		);
 
-		if ( $this->config['namespace'] && ! in_array( strtok( $type, '|' ), $builtin_types, true ) && substr( $type, 0, 3 ) !== 'WP_' ) {
+		// Extract base type, stripping union types (|) and generic notation (<).
+		$base_type = strtok( strtok( $type, '|' ), '<' );
+
+		if ( $this->config['namespace'] && ! in_array( $base_type, $builtin_types, true ) && substr( $type, 0, 3 ) !== 'WP_' ) {
 			return $this->config['namespace'] . '\\' . $type;
 		}
 
