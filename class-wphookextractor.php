@@ -145,7 +145,7 @@ class WpHookExtractor {
 		$vars = array( '' );
 		$signature = $tokens[ $i ][1];
 		$line = $tokens[ $i ][2];
-		$search_window = 50;
+		$search_window = 100;
 		for ( $j = $i + 1; $j < $i + $search_window; $j++ ) {
 			if ( ! isset( $tokens[ $j ] ) ) {
 				break;
@@ -252,6 +252,7 @@ class WpHookExtractor {
 				break;
 		}
 		$inside_code = false;
+		$inside_param_block = false;
 		$current_example = null;
 		$example_content = '';
 		$code_block_indent = null;
@@ -332,8 +333,26 @@ class WpHookExtractor {
 				continue;
 			}
 
+			// Handle lines inside @param array blocks (WordPress array parameter syntax).
+			if ( $inside_param_block ) {
+				// Check for closing brace.
+				if ( preg_match( '#^\s*\}\s*$#', $line ) ) {
+					$inside_param_block = false;
+					continue;
+				}
+				// Parse @type tags inside the block, skip other content.
+				if ( ! preg_match( '#^@#', $line ) ) {
+					continue;
+				}
+			}
+
 			if ( preg_match( '#@(param)(.*)#', $line, $matches ) ) {
 				$tag_value = \trim( $matches[2] );
+
+				// Check if this starts an array parameter block (ends with {).
+				if ( preg_match( '#\{\s*$#', $tag_value ) ) {
+					$inside_param_block = true;
+				}
 
 				// If this tag was already parsed, make its value an array.
 				if ( isset( $tags['params'] ) ) {
@@ -667,6 +686,11 @@ class WpHookExtractor {
 					// Determine if this parameter should be optional (not used consistently across all files).
 					$is_optional = $i >= $consistent_param_count;
 
+					// Strip trailing { from array parameter descriptions (WordPress documentation style).
+					if ( isset( $p[2] ) ) {
+						$p[2] = rtrim( $p[2], ' {' );
+					}
+
 					if ( 'unknown' === $p[0] ) {
 						$params .= "\n- `{$p[1]}`";
 						if ( $is_optional ) {
@@ -674,12 +698,12 @@ class WpHookExtractor {
 						} else {
 							$signature_params[] = $p[1];
 						}
-						if ( isset( $p[2] ) ) {
+						if ( ! empty( $p[2] ) ) {
 							$params .= ' ' . $p[2];
 						}
 					} else {
 						$params .= "\n- *`{$p[0]}`* `{$p[1]}`";
-						if ( isset( $p[2] ) ) {
+						if ( ! empty( $p[2] ) ) {
 							$params .= ' ' . $p[2];
 						}
 						if ( substr( $p[0], -5 ) === '|null' || $is_optional ) {
