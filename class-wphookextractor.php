@@ -351,6 +351,10 @@ class WpHookExtractor {
 				}
 				// If this tag was already parsed, make its value an array.
 				if ( isset( $tags[ $tag_name ] ) ) {
+					// Convert to array format if not already (first occurrence was stored as string).
+					if ( ! is_array( $tags[ $tag_name ] ) ) {
+						$tags[ $tag_name ] = array( array( $tags[ $tag_name ] ) );
+					}
 					$tags[ $tag_name ][] = array( $tag_value );
 				} else {
 					$tags[ $tag_name ] = $tag_value;
@@ -786,12 +790,16 @@ class WpHookExtractor {
 
 						// Generate the function documentation.
 						if ( $this->config['autoexample_phpdoc'] ) {
+							$returns_for_docs = $data['returns'] ?? '';
+							if ( is_array( $returns_for_docs ) ) {
+								$returns_for_docs = $returns_for_docs[0][0];
+							}
 							$function_docs = $this->generate_function_docs(
 								$hook,
 								$hook_type,
 								$param_docs,
 								$data['comment'] ?? '',
-								$data['returns'] ?? '',
+								$returns_for_docs,
 								$callback_name
 							);
 
@@ -828,7 +836,8 @@ class WpHookExtractor {
 
 			if ( ! empty( $data['returns'] ) ) {
 				$returns_content = "## Returns\n";
-				$p = preg_split( '/ +/', $data['returns'], 2 );
+				$returns_value = is_array( $data['returns'] ) ? $data['returns'][0][0] : $data['returns'];
+				$p = preg_split( '/ +/', $returns_value, 2 );
 				$p[0] = $this->maybe_prefix_namespace( $p[0] );
 				if ( ! isset( $p[1] ) ) {
 					$p[1] = '';
