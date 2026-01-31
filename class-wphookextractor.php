@@ -14,7 +14,7 @@ class WpHookExtractor {
 				'namespace'          => '',
 				'example_style'      => 'default',
 				'autoexample_phpdoc' => true,
-				'top_headline'       => false,
+				'github_wiki'        => true,
 			),
 			$config
 		);
@@ -505,7 +505,7 @@ class WpHookExtractor {
 			}
 			$sections = array();
 
-			if ( $this->config['top_headline'] ) {
+			if ( ! $this->config['github_wiki'] ) {
 				$sections['headline'] = "# $hook\n\n";
 			}
 
@@ -528,8 +528,9 @@ class WpHookExtractor {
 			}
 
 			$has_example = false;
+			$link_ext    = $this->config['github_wiki'] ? '' : '.md';
 			if ( ! empty( $data['deprecated'] ) ) {
-				$index .= "- [~~`$hook`~~]($hook) **DEPRECATED**";
+				$index .= "- [~~`$hook`~~]($hook$link_ext) **DEPRECATED**";
 				if ( ! empty( $data['replacement'] ) ) {
 					// Check if replacement looks like a hook name or a message.
 					if ( strpos( $data['replacement'], ' ' ) === false && ! strpos( $data['replacement'], '.' ) ) {
@@ -539,7 +540,7 @@ class WpHookExtractor {
 					}
 				}
 			} else {
-				$index .= "- [`$hook`]($hook)";
+				$index .= "- [`$hook`]($hook$link_ext)";
 				if ( ! empty( $data['comment'] ) ) {
 					$index .= ' ' . strtok( $data['comment'], PHP_EOL );
 				}
@@ -894,7 +895,7 @@ class WpHookExtractor {
 				$files_content .= "- [$file](" . $github_blob_url . str_replace( ':', '#L', $file ) . ")\n";
 				$files_content .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
 			}
-			$files_content .= "\n\n[← All Hooks](Hooks)\n";
+			$files_content .= "\n\n[← All Hooks](Hooks$link_ext)\n";
 			$sections['files'] = $files_content;
 
 			$hook_docs[ $hook ] = $sections;

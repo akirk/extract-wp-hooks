@@ -170,10 +170,10 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 	}
 
 
-	public function test_top_headline_enabled() {
+	public function test_github_wiki_disabled() {
 		$config = array(
 			'example_style' => 'default',
-			'top_headline'  => true,
+			'github_wiki'   => false,
 		);
 		$extractor = new WpHookExtractor( $config );
 
@@ -183,7 +183,12 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		$github_blob_url = 'https://github.com/test/repo/blob/main/';
 		$documentation = $extractor->create_documentation_content( $hooks, $github_blob_url );
 
+		// Should have top headline when not in wiki mode.
 		$this->assertArrayHasKey( 'headline', $documentation['hooks']['zero_param_hook'] );
+
+		// Links should have .md extension when not in wiki mode.
+		$this->assertStringContainsString( '(zero_param_hook.md)', $documentation['index'] );
+		$this->assertStringContainsString( '(Hooks.md)', $documentation['hooks']['zero_param_hook']['files'] );
 	}
 
 	public function test_null_param_without_namespace_prefix() {
