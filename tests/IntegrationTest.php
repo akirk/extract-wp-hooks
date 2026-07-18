@@ -355,4 +355,86 @@ class IntegrationTest extends WpHookExtractor_Testcase {
 		// Test index shows deprecated marker.
 		$this->assertStringEqualsFile( __DIR__ . '/fixtures/expected/deprecated_hooks_index.md', $documentation['index'] );
 	}
+
+	public function test_wp_ability_extraction() {
+		$file_path = __DIR__ . '/fixtures/wp_ability.php';
+		$extractor = new WpApiExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$this->assertArrayHasKey( 'my-plugin/analyze-text', $hooks );
+
+		$ability = $hooks['my-plugin/analyze-text'];
+		$this->assertEquals( 'wp_register_ability', $ability['type'] );
+		$this->assertEquals( 'my-plugin', $ability['ability_namespace'] );
+		$this->assertEquals( 'analyze-text', $ability['ability_slug'] );
+		$this->assertEquals( 'Analyze Text', $ability['ability']['label'] );
+		$this->assertEquals( 'text-processing', $ability['ability']['category'] );
+		$this->assertEquals( 'my_plugin_analyze_text', $ability['ability']['execute_callback'] );
+		$this->assertEquals( "array('My_Plugin','can_analyze_text')", $ability['ability_raw']['permission_callback'] );
+		$this->assertTrue( $ability['ability']['meta']['show_in_rest'] );
+		$this->assertStringContainsString( 'wp_register_ability', reset( $ability['files'] ) );
+	}
+
+	public function test_specialized_extractors_are_scoped_to_their_api_type() {
+		$file_path = __DIR__ . '/fixtures/wp_ability.php';
+		$hook_extractor = new WpHookExtractor();
+		$ability_extractor = new WpAbilityExtractor();
+
+		$this->assertArrayNotHasKey( 'my-plugin/analyze-text', $hook_extractor->extract_hooks_from_file( $file_path ) );
+		$this->assertArrayHasKey( 'my-plugin/analyze-text', $ability_extractor->extract_hooks_from_file( $file_path ) );
+	}
+
+	public function test_wp_ability_documentation() {
+		$file_path = __DIR__ . '/fixtures/wp_ability.php';
+		$extractor = new WpApiExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$documentation = $extractor->create_documentation_content( $hooks, 'https://github.com/test/repo/blob/main/' );
+
+		$this->assertArrayHasKey( 'my-plugin/analyze-text', $documentation['hooks'] );
+		$this->assertArrayHasKey( 'my-plugin/analyze-text', $documentation['pages'] );
+		$this->assertEquals( 'ability-my-plugin-analyze-text', $documentation['pages']['my-plugin/analyze-text'] );
+		$this->assertStringContainsString( '## Abilities: my-plugin', $documentation['index'] );
+		$this->assertStringContainsString( '[`my-plugin/analyze-text`](ability-my-plugin-analyze-text)', $documentation['index'] );
+
+		$sections = $documentation['hooks']['my-plugin/analyze-text'];
+		$this->assertStringContainsString( '- Namespace: `my-plugin`', $sections['ability'] );
+		$this->assertStringContainsString( '- Name: `analyze-text`', $sections['ability'] );
+		$this->assertStringContainsString( "- Permission callback: `array('My_Plugin','can_analyze_text')`", $sections['ability'] );
+		$this->assertStringContainsString( '- REST API: `true`', $sections['ability'] );
+		$this->assertStringContainsString( '## Input Schema', $sections['schemas'] );
+		$this->assertStringContainsString( '## Output Schema', $sections['schemas'] );
+		$this->assertStringContainsString( '## Metadata', $sections['metadata'] );
+		$this->assertStringNotContainsString( 'add_filter', implode( '', $sections ) );
+	}
+
+	public function test_wp_ability_documentation_filename_uses_slug() {
+		$file_path = __DIR__ . '/fixtures/wp_ability.php';
+		$extractor = new WpApiExtractor();
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+		$documentation = $extractor->create_documentation_content( $hooks, 'https://github.com/test/repo/blob/main/' );
+
+		$docs_path = sys_get_temp_dir() . '/extract-wp-hooks-' . uniqid( '', true );
+		$extractor->write_documentation( $documentation, $docs_path );
+
+		$this->assertFileExists( $docs_path . '/ability-my-plugin-analyze-text.md' );
+		$this->assertFileDoesNotExist( $docs_path . '/my-plugin/analyze-text.md' );
+
+		unlink( $docs_path . '/ability-my-plugin-analyze-text.md' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		unlink( $docs_path . '/Hooks.md' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+		rmdir( $docs_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+	}
+
+	public function test_wp_ability_without_namespace_warns() {
+		$extractor = new WpApiExtractor();
+		$hooks = $extractor->extract_hooks_from_file( __DIR__ . '/fixtures/wp_ability_without_namespace.php' );
+
+		$this->assertArrayHasKey( 'analyze-text', $hooks );
+		$this->assertEquals( 'analyze-text', $hooks['analyze-text']['ability_slug'] );
+
+		$warnings = $extractor->get_warnings();
+		$this->assertCount( 1, $warnings );
+		$this->assertStringContainsString( 'missing a namespace', $warnings[0] );
+		$this->assertStringContainsString( 'analyze-text', $warnings[0] );
+	}
 }

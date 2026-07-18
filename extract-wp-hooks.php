@@ -5,7 +5,7 @@
  * @author Alex Kirk
  */
 
-require_once __DIR__ . '/class-wphookextractor.php';
+require_once __DIR__ . '/class-wpapiextractor.php';
 
 $config_files = array( 'extract-wp-hooks.json', '.extract-wp-hooks.json' );
 $base = getcwd();
@@ -17,7 +17,7 @@ foreach ( $config_files as $config_file ) {
 }
 
 if ( ! file_exists( $config_file ) ) {
-	echo 'Please provide an extract-wp-hooks.json file in the current directory or the same directory as this script. Example: ', PHP_EOL, WpHookExtractor::sample_config(), PHP_EOL;
+	echo 'Please provide an extract-wp-hooks.json file in the current directory or the same directory as this script. Example: ', PHP_EOL, WpApiExtractor::sample_config(), PHP_EOL;
 	exit( 1 );
 }
 
@@ -26,7 +26,7 @@ $config = json_decode( file_get_contents( $config_file ), true );
 
 foreach ( array( 'wiki_directory', 'github_blob_url' ) as $key ) {
 	if ( ! isset( $config[ $key ] ) ) {
-		echo 'Missing config entry ', $key, '. Example: ', PHP_EOL, WpHookExtractor::sample_config(), PHP_EOL;
+		echo 'Missing config entry ', $key, '. Example: ', PHP_EOL, WpApiExtractor::sample_config(), PHP_EOL;
 		exit( 1 );
 	}
 }
@@ -51,7 +51,7 @@ if ( isset( $_SERVER['argv'] ) && count( $_SERVER['argv'] ) > 1 ) {
 }
 
 echo 'Scanning ', $base, PHP_EOL;
-$extractor = new WpHookExtractor( $config );
+$extractor = new WpApiExtractor( $config );
 $hooks = $extractor->scan_directory( $base );
 
 $wiki_directory = $config['wiki_directory'];
