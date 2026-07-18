@@ -3,7 +3,7 @@
  * Bootstrap file for PHPUnit tests
  */
 
-require_once __DIR__ . '/../class-wphookextractor.php';
+require_once __DIR__ . '/../class-wpapiextractor.php';
 
 class WpHookExtractor_Testcase extends PHPUnit\Framework\TestCase {
 	protected function assertStringEqualsFileOrWrite( $expected_file_path, $actual_content ) {

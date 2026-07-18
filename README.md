@@ -11,9 +11,14 @@ You can configure this tool either through a JSON configuration file or directly
 
 ## How it works
 
-The PHP script doesn't have any dependencies. It uses PHP's internal parser (using [`token_get_all`](https://www.php.net/manual/en/function.token-get-all.php)) to identify PHP function calls to `apply_filters()` or `do_action()`.
+The PHP script doesn't have any dependencies. It uses PHP's internal parser (using [`token_get_all`](https://www.php.net/manual/en/function.token-get-all.php)) to identify PHP function calls to `apply_filters()`, `do_action()`, or `wp_register_ability()`.
 
-It generates a markdown file for each filter which is suitable for a Github wiki. The page contains potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, references to the source code (including extracted source snippet).
+It generates markdown files suitable for a Github wiki. Hook pages contain potentially provided documentation (via a comment in the source code), an (auto-generated) example, parameters, return value, and references to the source code (including extracted source snippet). Ability pages contain their namespace, name, label, category, callbacks, schemas, metadata, and source references.
+
+Internally, `WpApiExtractor` coordinates specialized extractors for each third-party API surface:
+
+- `WpHookExtractor` extracts hooks.
+- `WpAbilityExtractor` extracts abilities.
 
 ### Example: Provide Documentation Via a Comment
 For each filter, it looks at the comment preceeding the filter, so that you can document it, for example:
@@ -122,6 +127,25 @@ It generates this output: [example_filter3](https://github.com/akirk/extract-hoo
 >
 > - `$text`
 > - `$mode`
+
+### WordPress Abilities
+
+The extractor also documents abilities registered with `wp_register_ability()`. Ability names should use the WordPress Abilities API namespace format, such as `my-plugin/analyze-text`.
+
+```php
+wp_register_ability(
+	'my-plugin/analyze-text',
+	array(
+		'label'               => __( 'Analyze Text', 'my-plugin' ),
+		'description'         => __( 'Analyzes text and returns a sentiment result.', 'my-plugin' ),
+		'category'            => 'text-processing',
+		'execute_callback'    => 'my_plugin_analyze_text',
+		'permission_callback' => 'my_plugin_can_analyze_text',
+	)
+);
+```
+
+Abilities are grouped in the index by namespace, for example `Abilities: my-plugin`. The generated page uses a filesystem-safe slug such as `ability-my-plugin-analyze-text.md` while preserving the canonical ability name in the documentation.
 
 ## Install
 

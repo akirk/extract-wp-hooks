@@ -15,14 +15,14 @@ class WpHookExtractor {
 	 *
 	 * @var array
 	 */
-	private $config;
+	protected $config;
 
 	/**
 	 * Warnings collected during extraction.
 	 *
 	 * @var array
 	 */
-	private $warnings = array();
+	protected $warnings = array();
 
 	/**
 	 * Constructor.
@@ -43,6 +43,16 @@ class WpHookExtractor {
 			),
 			$config
 		);
+	}
+
+	/**
+	 * Gets a configuration value.
+	 *
+	 * @param string $key Configuration key.
+	 * @return mixed Configuration value.
+	 */
+	public function get_config_value( $key ) {
+		return $this->config[ $key ] ?? null;
 	}
 
 	/**
@@ -256,73 +266,9 @@ class WpHookExtractor {
 	 * @return array Parameters and signature.
 	 */
 	public function extract_vars( $params, $tokens, $i ) {
-		$parens        = array();
-		$var           = 0;
-		$vars          = array( '' );
-		$signature     = $tokens[ $i ][1];
-		$line          = $tokens[ $i ][2];
-		$search_window = 100;
-		for ( $j = $i + 1; $j < $i + $search_window; $j++ ) {
-			if ( ! isset( $tokens[ $j ] ) ) {
-				break;
-			}
-			$token = $tokens[ $j ];
-			if ( is_string( $token ) ) {
-				$open_paren = false;
-				$signature .= $token;
-				switch ( $token ) {
-					case '[':
-					case '(':
-					case '{':
-						$vars[ $var ] .= $token;
-						$parens[]      = $token;
-
-						break;
-					case ')':
-						$open_paren = '(';
-						// Intentional fallthrough.
-					case ']':
-						if ( ! $open_paren ) {
-							$open_paren = '[';
-						}
-						// Intentional fallthrough.
-					case '}':
-						if ( ! $open_paren ) {
-							$open_paren = '{';
-						}
-						$vars[ $var ] .= $token;
-
-						if ( end( $parens ) === $open_paren ) {
-							array_pop( $parens );
-						}
-						if ( empty( $parens ) ) {
-							$vars[ $var ] = substr( $vars[ $var ], 0, -1 );
-							// all of the filter has been consumed.
-							break 2;
-						}
-						break;
-					case ',':
-						if ( count( $parens ) === 1 ) {
-							++$var;
-							$vars[ $var ] = '';
-						} else {
-							$vars[ $var ] .= $token;
-						}
-						break;
-					default:
-						$vars[ $var ] .= $token;
-						break;
-				}
-			} elseif ( is_array( $token ) ) {
-				$signature .= $token[1];
-				if ( T_WHITESPACE !== $token[0] ) {
-					$vars[ $var ] .= $token[1];
-				}
-			}
-		}
-		if ( $j === $i + $search_window ) {
-			$signature = rtrim( $signature ) . PHP_EOL . '// ...';
-		}
+		$call      = $this->extract_call_arguments( $tokens, $i, 100 );
+		$vars      = $call['args'];
+		$signature = $call['signature'];
 		array_shift( $vars );
 		foreach ( $vars as $k => $var ) {
 			if ( isset( $params[ $k ] ) ) {
@@ -337,13 +283,234 @@ class WpHookExtractor {
 	}
 
 	/**
+	 * Extracts top-level arguments from a function call.
+	 *
+	 * @param array $tokens All tokens from the file.
+	 * @param int   $i      Current token index.
+	 * @param int   $search_window Maximum number of tokens to search.
+	 * @return array Arguments and signature.
+	 */
+	protected function extract_call_arguments( $tokens, $i, $search_window = 300 ) {
+		$parens        = array();
+		$arg           = 0;
+		$args          = array( '' );
+		$signature     = $tokens[ $i ][1];
+		$started       = false;
+
+		for ( $j = $i + 1; $j < $i + $search_window; $j++ ) {
+			if ( ! isset( $tokens[ $j ] ) ) {
+				break;
+			}
+			$token = $tokens[ $j ];
+			if ( is_string( $token ) ) {
+				$open_paren = false;
+				$signature .= $token;
+				switch ( $token ) {
+					case '[':
+					case '(':
+					case '{':
+						if ( ! $started && '(' === $token ) {
+							$started  = true;
+							$parens[] = $token;
+							break;
+						}
+						$args[ $arg ] .= $token;
+						$parens[]      = $token;
+						break;
+					case ')':
+						$open_paren = '(';
+						// Intentional fallthrough.
+					case ']':
+						if ( ! $open_paren ) {
+							$open_paren = '[';
+						}
+						// Intentional fallthrough.
+					case '}':
+						if ( ! $open_paren ) {
+							$open_paren = '{';
+						}
+						$args[ $arg ] .= $token;
+
+						if ( end( $parens ) === $open_paren ) {
+							array_pop( $parens );
+						}
+						if ( empty( $parens ) ) {
+							$args[ $arg ] = substr( $args[ $arg ], 0, -1 );
+							break 2;
+						}
+						break;
+					case ',':
+						if ( count( $parens ) === 1 ) {
+							++$arg;
+							$args[ $arg ] = '';
+						} else {
+							$args[ $arg ] .= $token;
+						}
+						break;
+					default:
+						$args[ $arg ] .= $token;
+						break;
+				}
+			} elseif ( is_array( $token ) ) {
+				$signature .= $token[1];
+				if ( T_WHITESPACE !== $token[0] ) {
+					$args[ $arg ] .= $token[1];
+				}
+			}
+		}
+
+		if ( $j === $i + $search_window ) {
+			$signature = rtrim( $signature ) . PHP_EOL . '// ...';
+		}
+
+		return array(
+			'args'      => $args,
+			'signature' => $signature,
+		);
+	}
+
+	/**
+	 * Parses static key/value pairs from an array expression.
+	 *
+	 * @param string $expression Array expression.
+	 * @return array Parsed values and raw expressions.
+	 */
+	protected function parse_static_array_expression( $expression ) {
+		$values = array();
+		$raw    = array();
+		$body   = $this->strip_array_wrapper( trim( $expression ) );
+
+		foreach ( $this->split_top_level( $body, ',' ) as $item ) {
+			$parts = $this->split_top_level( $item, '=>' );
+			if ( 2 !== count( $parts ) ) {
+				continue;
+			}
+
+			$key            = trim( trim( $parts[0] ), '"\'' );
+			$value          = trim( $parts[1] );
+			$raw[ $key ]    = $value;
+			$values[ $key ] = $this->extract_static_value( $value );
+		}
+
+		return array(
+			'values' => $values,
+			'raw'    => $raw,
+		);
+	}
+
+	/**
+	 * Strips the outer array syntax from an expression.
+	 *
+	 * @param string $expression Array expression.
+	 * @return string Array body.
+	 */
+	protected function strip_array_wrapper( $expression ) {
+		if ( preg_match( '/^array\((.*)\)$/s', $expression, $matches ) ) {
+			return $matches[1];
+		}
+		if ( '[' === substr( $expression, 0, 1 ) && ']' === substr( $expression, -1 ) ) {
+			return substr( $expression, 1, -1 );
+		}
+
+		return $expression;
+	}
+
+	/**
+	 * Splits an expression by a delimiter at top level only.
+	 *
+	 * @param string $expression Expression to split.
+	 * @param string $delimiter  Delimiter.
+	 * @return array Split parts.
+	 */
+	protected function split_top_level( $expression, $delimiter ) {
+		$parts         = array();
+		$current       = '';
+		$depth         = 0;
+		$quote         = '';
+		$delimiter_len = strlen( $delimiter );
+		$len           = strlen( $expression );
+
+		for ( $i = 0; $i < $len; $i++ ) {
+			$char = $expression[ $i ];
+
+			if ( $quote ) {
+				$current .= $char;
+				if ( '\\' === $char && $i + 1 < $len ) {
+					++$i;
+					$current .= $expression[ $i ];
+					continue;
+				}
+				if ( $char === $quote ) {
+					$quote = '';
+				}
+				continue;
+			}
+
+			if ( '"' === $char || "'" === $char ) {
+				$quote    = $char;
+				$current .= $char;
+				continue;
+			}
+
+			if ( in_array( $char, array( '(', '[', '{' ), true ) ) {
+				++$depth;
+			} elseif ( in_array( $char, array( ')', ']', '}' ), true ) ) {
+				--$depth;
+			}
+
+			if ( 0 === $depth && substr( $expression, $i, $delimiter_len ) === $delimiter ) {
+				$parts[] = trim( $current );
+				$current = '';
+				$i      += $delimiter_len - 1;
+				continue;
+			}
+
+			$current .= $char;
+		}
+
+		if ( '' !== trim( $current ) ) {
+			$parts[] = trim( $current );
+		}
+
+		return $parts;
+	}
+
+	/**
+	 * Extracts a simple display value from a PHP expression.
+	 *
+	 * @param string $expression PHP expression.
+	 * @return mixed Static value or original expression.
+	 */
+	protected function extract_static_value( $expression ) {
+		$expression = trim( $expression );
+
+		if ( strlen( $expression ) - strlen( trim( $expression, '"\'' ) ) === 2 ) {
+			return trim( $expression, '"\'' );
+		}
+		if ( preg_match( '/^__\(\s*([\'"][^\'"]+[\'"])/', $expression, $matches ) ) {
+			return trim( $matches[1], '"\'' );
+		}
+		if ( in_array( $expression, array( 'true', 'false' ), true ) ) {
+			return 'true' === $expression;
+		}
+		if ( 'null' === $expression ) {
+			return null;
+		}
+		if ( preg_match( '/^(array\(|\[)/', $expression ) ) {
+			return $this->parse_static_array_expression( $expression )['values'];
+		}
+
+		return $expression;
+	}
+
+	/**
 	 * Parses a docblock comment and extracts tags.
 	 *
 	 * @param string $raw_comment The raw docblock comment.
 	 * @param array  $params      Existing parameters.
 	 * @return array Parsed tags from the docblock.
 	 */
-	private function parse_docblock( $raw_comment, $params ) {
+	protected function parse_docblock( $raw_comment, $params ) {
 		if ( preg_match( '#^([ \t]*\*\s*|//\s*)?Documented (in|at) #m', $raw_comment ) ) {
 			return array();
 		}
@@ -656,8 +823,11 @@ class WpHookExtractor {
 		$index     = '';
 		$section   = '';
 		$hook_docs = array();
+		$page_map  = array();
 
 		foreach ( $hooks as $hook => $data ) {
+			$page_name = $this->get_documentation_page_name( $hook, $data );
+			$page_map[ $hook ] = $page_name;
 			if ( $section !== $data['section'] ) {
 				$section = $data['section'];
 				$index  .= PHP_EOL . '## ' . $section . PHP_EOL . PHP_EOL;
@@ -666,6 +836,26 @@ class WpHookExtractor {
 
 			if ( ! $this->config['github_wiki'] ) {
 				$sections['headline'] = "# $hook\n\n";
+			}
+
+			$link_ext = $this->config['github_wiki'] ? '' : '.md';
+
+			if ( 'wp_register_ability' === $data['type'] ) {
+				$index .= "- [`$hook`]($page_name$link_ext)";
+				if ( ! empty( $data['comment'] ) ) {
+					$index .= ' ' . strtok( $data['comment'], PHP_EOL );
+				}
+				$index .= PHP_EOL;
+
+				if ( ! empty( $data['comment'] ) ) {
+					$sections['description'] = PHP_EOL . $data['comment'] . PHP_EOL . PHP_EOL;
+				}
+
+				$hook_docs[ $hook ] = array_merge(
+					$sections,
+					$this->create_ability_documentation_sections( $data, $github_blob_url, $link_ext )
+				);
+				continue;
 			}
 
 			// Add deprecation warning if this is a deprecated hook.
@@ -687,9 +877,8 @@ class WpHookExtractor {
 			}
 
 			$has_example = false;
-			$link_ext    = $this->config['github_wiki'] ? '' : '.md';
 			if ( ! empty( $data['deprecated'] ) ) {
-				$index .= "- [~~`$hook`~~]($hook$link_ext) **DEPRECATED**";
+				$index .= "- [~~`$hook`~~]($page_name$link_ext) **DEPRECATED**";
 				if ( ! empty( $data['replacement'] ) ) {
 					// Check if replacement looks like a hook name or a message.
 					if ( strpos( $data['replacement'], ' ' ) === false && ! strpos( $data['replacement'], '.' ) ) {
@@ -699,7 +888,7 @@ class WpHookExtractor {
 					}
 				}
 			} else {
-				$index .= "- [`$hook`]($hook$link_ext)";
+				$index .= "- [`$hook`]($page_name$link_ext)";
 				if ( ! empty( $data['comment'] ) ) {
 					$index .= ' ' . strtok( $data['comment'], PHP_EOL );
 				}
@@ -1050,13 +1239,7 @@ class WpHookExtractor {
 				$sections['returns'] = $returns_content;
 			}
 
-			$files_content = "## Files\n\n";
-			foreach ( $data['files'] as $file => $signature ) {
-				$files_content .= "- [$file](" . $github_blob_url . str_replace( ':', '#L', $file ) . ")\n";
-				$files_content .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
-			}
-			$files_content    .= "\n\n[← All Hooks](Hooks$link_ext)\n";
-			$sections['files'] = $files_content;
+			$sections['files'] = $this->create_files_section( $data, $github_blob_url, $link_ext );
 
 			$hook_docs[ $hook ] = $sections;
 		}
@@ -1064,7 +1247,158 @@ class WpHookExtractor {
 		return array(
 			'index' => $index,
 			'hooks' => $hook_docs,
+			'pages' => $page_map,
 		);
+	}
+
+	/**
+	 * Creates documentation sections for an ability.
+	 *
+	 * @param array  $data            Ability data.
+	 * @param string $github_blob_url Base URL for GitHub blob links.
+	 * @param string $link_ext        Documentation link extension.
+	 * @return array Documentation sections.
+	 */
+	private function create_ability_documentation_sections( $data, $github_blob_url, $link_ext ) {
+		return array(
+			'ability'  => $this->create_ability_summary_section( $data ),
+			'schemas'  => $this->create_ability_schema_sections( $data ),
+			'metadata' => $this->create_ability_metadata_section( $data ),
+			'files'    => $this->create_files_section( $data, $github_blob_url, $link_ext ),
+		);
+	}
+
+	/**
+	 * Creates the summary section for an ability.
+	 *
+	 * @param array $data Ability data.
+	 * @return string Markdown content.
+	 */
+	private function create_ability_summary_section( $data ) {
+		$ability_content = "## Ability\n";
+		if ( ! empty( $data['ability_namespace'] ) ) {
+			$ability_content .= "\n- Namespace: `{$data['ability_namespace']}`";
+		}
+		if ( ! empty( $data['ability_slug'] ) ) {
+			$ability_content .= "\n- Name: `{$data['ability_slug']}`";
+		}
+		foreach (
+			array(
+				'label'    => 'Label',
+				'category' => 'Category',
+			) as $key => $label
+		) {
+			$value = $this->get_ability_display_value( $data, $key );
+			if ( '' !== $value ) {
+				$ability_content .= "\n- {$label}: `{$value}`";
+			}
+		}
+		foreach (
+			array(
+				'execute_callback'    => 'Execute callback',
+				'permission_callback' => 'Permission callback',
+			) as $key => $label
+		) {
+			$value = $this->get_ability_display_value( $data, $key );
+			if ( '' !== $value ) {
+				$ability_content .= "\n- {$label}: `{$value}`";
+			}
+		}
+		if ( isset( $data['ability']['meta']['show_in_rest'] ) ) {
+			$ability_content .= "\n- REST API: `" . ( $data['ability']['meta']['show_in_rest'] ? 'true' : 'false' ) . '`';
+		}
+
+		return $ability_content . PHP_EOL . PHP_EOL;
+	}
+
+	/**
+	 * Gets a displayable ability argument value.
+	 *
+	 * @param array  $data Ability data.
+	 * @param string $key  Ability argument key.
+	 * @return string Display value.
+	 */
+	private function get_ability_display_value( $data, $key ) {
+		if ( isset( $data['ability'][ $key ] ) && is_scalar( $data['ability'][ $key ] ) && '' !== $data['ability'][ $key ] ) {
+			return (string) $data['ability'][ $key ];
+		}
+		if ( ! empty( $data['ability_raw'][ $key ] ) ) {
+			return $data['ability_raw'][ $key ];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Creates the schema sections for an ability.
+	 *
+	 * @param array $data Ability data.
+	 * @return string Markdown content.
+	 */
+	private function create_ability_schema_sections( $data ) {
+		$content = '';
+		foreach (
+			array(
+				'input_schema'  => 'Input Schema',
+				'output_schema' => 'Output Schema',
+			) as $key => $title
+		) {
+			if ( empty( $data['ability_raw'][ $key ] ) ) {
+				continue;
+			}
+			$content .= '## ' . $title . PHP_EOL . PHP_EOL;
+			$content .= '```php' . PHP_EOL . $data['ability_raw'][ $key ] . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Creates the metadata section for an ability.
+	 *
+	 * @param array $data Ability data.
+	 * @return string Markdown content.
+	 */
+	private function create_ability_metadata_section( $data ) {
+		if ( empty( $data['ability_raw']['meta'] ) ) {
+			return '';
+		}
+
+		return '## Metadata' . PHP_EOL . PHP_EOL . '```php' . PHP_EOL . $data['ability_raw']['meta'] . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+	}
+
+	/**
+	 * Creates the files section.
+	 *
+	 * @param array  $data            Extracted item data.
+	 * @param string $github_blob_url Base URL for GitHub blob links.
+	 * @param string $link_ext        Documentation link extension.
+	 * @return string Markdown content.
+	 */
+	private function create_files_section( $data, $github_blob_url, $link_ext ) {
+		$files_content = "## Files\n\n";
+		foreach ( $data['files'] as $file => $signature ) {
+			$files_content .= "- [$file](" . $github_blob_url . str_replace( ':', '#L', $file ) . ")\n";
+			$files_content .= '```php' . PHP_EOL . $signature . PHP_EOL . '```' . PHP_EOL . PHP_EOL;
+		}
+		$files_content .= "\n\n[← All Hooks](Hooks$link_ext)\n";
+
+		return $files_content;
+	}
+
+	/**
+	 * Gets the documentation page name for an extracted item.
+	 *
+	 * @param string $name Extracted item name.
+	 * @param array  $data Extracted item data.
+	 * @return string Documentation page name.
+	 */
+	private function get_documentation_page_name( $name, $data ) {
+		if ( isset( $data['type'] ) && 'wp_register_ability' === $data['type'] ) {
+			return 'ability-' . preg_replace( '/[^a-z0-9_-]+/i', '-', $name );
+		}
+
+		return $name;
 	}
 
 	/**
@@ -1078,7 +1412,7 @@ class WpHookExtractor {
 			mkdir( $docs_path, 0777, true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
 		}
 
-		$section_order = array( 'headline', 'deprecation', 'description', 'example', 'parameters', 'returns', 'files' );
+		$section_order = array( 'headline', 'deprecation', 'description', 'ability', 'schemas', 'metadata', 'example', 'parameters', 'returns', 'files' );
 
 		foreach ( $documentation['hooks'] as $hook => $sections ) {
 			$doc = '';
@@ -1088,7 +1422,8 @@ class WpHookExtractor {
 					$doc .= $sections[ $section_key ];
 				}
 			}
-			file_put_contents( $docs_path . "/$hook.md", $doc ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			$page_name = isset( $documentation['pages'][ $hook ] ) ? $documentation['pages'][ $hook ] : $this->get_documentation_page_name( $hook, $sections );
+			file_put_contents( $docs_path . "/$page_name.md", $doc ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		}
 
 		file_put_contents( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
