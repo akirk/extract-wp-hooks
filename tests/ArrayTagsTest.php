@@ -109,6 +109,24 @@ class ArrayTagsTest extends WpHookExtractor_Testcase {
 	}
 
 	/**
+	 * Test that generic types containing spaces are not split apart.
+	 */
+	public function test_generic_type_with_space() {
+		$file_path = __DIR__ . '/fixtures/generic_type_with_space.php';
+		$extractor = new WpHookExtractor( array( 'example_style' => 'prefixed' ) );
+		$hooks = $extractor->extract_hooks_from_file( $file_path );
+
+		$documentation = $extractor->create_documentation_content( $hooks, 'https://github.com/test/repo/blob/main/' );
+		$hook_doc = $documentation['hooks']['generic_type_with_space_hook'];
+
+		$this->assertStringContainsString( '- *`array<string, string[]>`* `$tags` Tag name => list of AT-URIs.', $hook_doc['parameters'] );
+		$this->assertStringContainsString( '`array<string, string[]>` The filtered tags.', $hook_doc['returns'] );
+		$this->assertStringContainsString( ' * @param array<string, string[]> $tags', $hook_doc['example'] );
+		$this->assertStringContainsString( ' * @return array<string, string[]> The filtered tags.', $hook_doc['example'] );
+		$this->assertStringContainsString( 'return $tags;', $hook_doc['example'] );
+	}
+
+	/**
 	 * Test that single @return tag remains a string (backwards compatibility).
 	 */
 	public function test_single_return_tag_is_string() {
