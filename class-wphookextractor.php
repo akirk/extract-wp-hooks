@@ -770,7 +770,7 @@ class WpHookExtractor {
 
 						if ( false !== strpos( $var, ' ' ) && false === strpos( $var, '\'' ) ) {
 							$param      = $var;
-							$p          = preg_split( '/ +/', $param, 3 );
+							$p          = $this->split_type( $param, 3 );
 							$vars[ $k ] = $p[1];
 							continue;
 						}
@@ -842,7 +842,7 @@ class WpHookExtractor {
 					}
 
 					++$count;
-					$p    = preg_split( '/ +/', $param, 3 );
+					$p    = $this->split_type( $param, 3 );
 					$p[0] = $this->maybe_prefix_namespace( $p[0] );
 					// Determine if this parameter should be optional (not used consistently across all files).
 					$is_optional = $i >= $consistent_param_count;
@@ -1040,7 +1040,7 @@ class WpHookExtractor {
 			if ( ! empty( $data['returns'] ) ) {
 				$returns_content = "## Returns\n";
 				$returns_value   = is_array( $data['returns'] ) ? $data['returns'][0][0] : $data['returns'];
-				$p               = preg_split( '/ +/', $returns_value, 2 );
+				$p               = $this->split_type( $returns_value, 2 );
 				$p[0]            = $this->maybe_prefix_namespace( $p[0] );
 				if ( ! isset( $p[1] ) ) {
 					$p[1] = '';
@@ -1153,7 +1153,7 @@ class WpHookExtractor {
 			// First, find the longest type to align parameters properly.
 			$max_type_length = 0;
 			foreach ( $params as $param_info ) {
-				$parts = explode( ' ', $param_info, 2 );
+				$parts = $this->split_type( $param_info, 2 );
 				if ( count( $parts ) === 2 ) {
 					$max_type_length = max( $max_type_length, strlen( $parts[0] ) );
 				}
@@ -1161,7 +1161,7 @@ class WpHookExtractor {
 
 			foreach ( $params as $i => $param_info ) {
 				// Parse parameter information.
-				$parts = explode( ' ', $param_info, 2 );
+				$parts = $this->split_type( $param_info, 2 );
 
 				if ( count( $parts ) === 2 ) {
 					// We have both type and variable name.
@@ -1204,13 +1204,13 @@ class WpHookExtractor {
 		// Add return type for filters.
 		if ( 'filter' === $hook_type ) {
 			if ( ! empty( $return_type ) ) {
-				$return_parts = preg_split( '/ +/', $return_type, 2 );
+				$return_parts = $this->split_type( $return_type, 2 );
 				$return_type  = $return_parts[0];
 				$return_desc  = $return_parts[1] ?? '';
 				$doc         .= " * @return {$return_type} {$return_desc}\n";
 			} elseif ( ! empty( $params ) ) {
 				// If we have parameters, assume we return the first parameter's type.
-				$first_param = explode( ' ', $params[0], 2 );
+				$first_param = $this->split_type( $params[0], 2 );
 				if ( count( $first_param ) === 2 ) {
 					$doc .= " * @return {$first_param[0]} The filtered value.\n";
 				} else {
@@ -1350,6 +1350,34 @@ class WpHookExtractor {
 	 */
 	private function get_hook_name_for_example( $hook ) {
 		return preg_replace( '/\{\$[^}]+\}/', '*', $hook );
+	}
+
+	/**
+	 * Split a tag value on spaces like preg_split( '/ +/' ), but keep a type
+	 * such as array<string, string[]> or array{a: int} in one piece.
+	 *
+	 * @param string $value The tag value, starting with the type.
+	 * @param int    $limit Maximum number of parts.
+	 * @return string[] The parts.
+	 */
+	private function split_type( $value, $limit ) {
+		$depth  = 0;
+		$length = strlen( $value );
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $value[ $i ];
+			if ( false !== strpos( '<{(', $char ) ) {
+				++$depth;
+			} elseif ( false !== strpos( '>})', $char ) ) {
+				$depth = max( 0, $depth - 1 );
+			} elseif ( 0 === $depth && ' ' === $char ) {
+				$rest = ltrim( substr( $value, $i ), ' ' );
+				if ( '' === $rest ) {
+					return array( substr( $value, 0, $i ) );
+				}
+				return array_merge( array( substr( $value, 0, $i ) ), preg_split( '/ +/', $rest, $limit - 1 ) );
+			}
+		}
+		return array( $value );
 	}
 
 	/**
